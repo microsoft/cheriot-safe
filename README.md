@@ -31,3 +31,20 @@ trademarks or logos is subject to and must follow
 [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
+
+
+## Setting up Access
+In a browser go to: https://github.com/microsoft/cheriot-safe
+Click on the purple squigily item in the upper right corner. 
+Select Settings
+Select SSH and GPG keys
+Add your SSH key
+Authenticate key.
+
+## Checking out the Repo
+---------------------------------------------------------
+git clone git@github.com:microsoft/cheriot-safe.git  <ws>
+cd <ws>
+git submodule update --init --recursive
+
+
