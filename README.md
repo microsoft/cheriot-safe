@@ -34,17 +34,18 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 
 
 ## Setting up Access
+```
 In a browser go to: https://github.com/microsoft/cheriot-safe
 Click on the purple squigily item in the upper right corner. 
 Select Settings
 Select SSH and GPG keys
 Add your SSH key
 Authenticate key.
-
+```
 ## Checking out the Repo
----------------------------------------------------------
+```
 git clone git@github.com:microsoft/cheriot-safe.git  <ws>
 cd <ws>
 git submodule update --init --recursive
-
+```
 
