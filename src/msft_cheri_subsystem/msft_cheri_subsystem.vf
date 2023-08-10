@@ -1,0 +1,57 @@
+// Define Paths
++define+STITCH_GIT_HEAD=8965862
++define+STITCH_CLOCK_SECONDS=1691682833
+
+// Include Paths
++incdir+/home/gyley/hardware/cores/antifortress/dvip-cm0/dvip/tools/stitch/verilog
+
+// Lib Include Paths
+
+// Package Files
+
+// Lib Package Files
+
+// RTL Files
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_cheri0_subsystem.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvDebug_cpu_trace.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvDebug_backdoor_v0.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_fpga_block_ram_byte_wr_model.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_fpga_block_ram_model.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_fpga_block_ram_2port_model.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_riscv_memory_v0.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_dmb_fifo.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_dmb.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_cheri_axi_fabric.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_periph_wrapper_v0.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_mem_bit_write.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_mgr_ifc.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_fifo.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_msftDvIp_cheri_axi_fabric_addr_decode.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_msftDvIp_cheri_axi_fabric_mgr_mux.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_msftDvIp_cheri_axi_fabric_sub_mux.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_sub_ifc.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_def_sub.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_periph_axi2apb_decode.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_creg_timer.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_jtag_driver.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_spi_1m_1s.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_i2c_1m_1s.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_uart_fifo.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_uart.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_dma_apb.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_creg_intc.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_gpio.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_mmreg.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_axi2apb.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_periph_axi2apb_decode_decoder.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_spi_fifo.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_spi_mgr.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_spi_sub.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_i2c_fifo.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_i2c_mgr.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_i2c_sub.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_dma_fifo.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_dma_engine.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_dma_ctrl0.sv
+
+// Lib RTL Files

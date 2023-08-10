@@ -1,0 +1,22 @@
+.DEFAULT_GOAL := all
+
+#===============================================
+# Set Source Directories
+#===============================================
+SOURCE_DIR = $(LIBC_DIR)/src/stdlib \
+             $(LIBC_DIR)/src/stdio  \
+             $(LIBC_DIR)/src/string \
+             $(LIBC_DIR)/src/irq    \
+             $(LIBC_DIR)/src/edc    \
+             $(LIBC_DIR)/src/virtual \
+
+#             $(LIBC_DIR)/src/packet \
+
+#===============================================
+# Get Sources
+#===============================================
+LIBC_SOURCES  = $(foreach DIR,$(SOURCE_DIR),$(wildcard $(DIR)/*.c))
+LIBCXX_SOURCES  = $(foreach DIR,$(SOURCE_DIR),$(wildcard $(DIR)/*.cc))
+$(info LIBC_SOURCES: ${LIBC_SOURCES})
+$(info LIBCXX_SOURCES: ${LIBCXX_SOURCES})
+LIBC_INC = ./inc

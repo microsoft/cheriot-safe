@@ -1,0 +1,61 @@
+// Define Paths
++define+RVFI=1
++define+STITCH_GIT_HEAD=8965862
++define+STITCH_CLOCK_SECONDS=1691682832
+
+// Include Paths
+
+// Lib Include Paths
++incdir+$CHERI_RTL_DIR
++incdir+$CHERI_RTL_DIR/../vendor/lowrisc_ip/ip/prim/rtl
++incdir+$CHERI_RTL_DIR/../vendor/lowrisc_ip/dv/sv/dv_utils
+
+// Package Files
+
+// Lib Package Files
+$CHERI_RTL_DIR/../vendor/lowrisc_ip/ip/prim/rtl/prim_ram_1p_pkg.sv
+$CHERI_RTL_DIR/../vendor/lowrisc_ip/ip/prim/rtl/prim_cipher_pkg.sv
+$CHERI_RTL_DIR/cheri_pkg.sv
+$CHERI_RTL_DIR/ibex_pkg.sv
+$CHERI_RTL_DIR/ibex_tracer_pkg.sv
+
+// RTL Files
+$MSFT_CHERI_CORE/msftDvIp_cheri_core0.sv
+$MSFT_CHERI_CORE/msftDvIp_cheri_core_wrapper.sv
+$MSFT_CHERI_CORE/msftDvIp_riscv_cheri_debug.sv
+$MSFT_CHERI_CORE/msftDvIp_obimux3.sv
+$MSFT_CHERI_CORE/msftDvIp_riscv_cheri_dmibus.sv
+$MSFT_CHERI_CORE/msftDvIp_riscv_cheri_mem.sv
+$MSFT_CHERI_CORE/msftDvIp_riscv_cheri_debug_rom.sv
+$MSFT_CHERI_CORE/msftDvIp_riscv_cheri_debug_reg.sv
+
+// Lib RTL Files
+$CHERI_RTL_DIR/../vendor/lowrisc_ip/ip/prim/rtl/prim_lfsr.sv
+$CHERI_RTL_DIR/cheri_decoder.sv
+$CHERI_RTL_DIR/cheri_ex.sv
+$CHERI_RTL_DIR/cheri_regfile.sv
+$CHERI_RTL_DIR/cheri_trvk_stage.sv
+$CHERI_RTL_DIR/cheri_tbre.sv
+$CHERI_RTL_DIR/ibex_alu.sv
+$CHERI_RTL_DIR/ibex_branch_predict.sv
+$CHERI_RTL_DIR/ibex_compressed_decoder.sv
+$CHERI_RTL_DIR/ibex_controller.sv
+$CHERI_RTL_DIR/ibex_counter.sv
+$CHERI_RTL_DIR/ibex_core.sv
+$CHERI_RTL_DIR/ibex_cs_registers.sv
+$CHERI_RTL_DIR/ibex_csr.sv
+$CHERI_RTL_DIR/ibex_decoder.sv
+$CHERI_RTL_DIR/ibex_dummy_instr.sv
+$CHERI_RTL_DIR/ibex_ex_block.sv
+$CHERI_RTL_DIR/ibex_fetch_fifo.sv
+$CHERI_RTL_DIR/ibex_id_stage.sv
+$CHERI_RTL_DIR/ibex_if_stage.sv
+$CHERI_RTL_DIR/ibex_load_store_unit.sv
+$CHERI_RTL_DIR/ibex_multdiv_fast.sv
+$CHERI_RTL_DIR/ibex_multdiv_slow.sv
+$CHERI_RTL_DIR/ibex_pmp.sv
+$CHERI_RTL_DIR/ibex_prefetch_buffer.sv
+$CHERI_RTL_DIR/ibex_tracer.sv
+$CHERI_RTL_DIR/ibex_wb_stage.sv
+$CHERI_RTL_DIR/ibexc_top.sv
+$CHERI_RTL_DIR/ibexc_top_tracing.sv

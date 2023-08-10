@@ -1,0 +1,26 @@
+// Define Paths
++define+_FLASH_REDUCED_TIMING_=1
++define+_FLASH_VERBOSE_=1
++define+STITCH_GIT_HEAD=8965862
++define+STITCH_CLOCK_SECONDS=1691682834
+
+// Include Paths
+
+// Lib Include Paths
+
+// Package Files
+
+// Lib Package Files
+
+// RTL Files
+$MSFT_CHERI_TB/glbl.v
+$MSFT_CHERI_TB/level_tb1.sv
+$MSFT_CHERI_TB/msftDvTb_clock.sv
+$MSFT_CHERI_TB/msftDvTb_reset.sv
+$MSFT_CHERI_TB/msftDvTb_testend.sv
+$MSFT_CHERI_TB/msftDvTb_uart_tx_mon.sv
+$MSFT_CHERI_TB/msftDvPkg_dpi_apb_bus.sv
+$MSFT_CHERI_TB/msftDvDebug_dpi_apb_mux.sv
+//$MSFT_CHERI_TB/msftDvIp_jtag_driver.sv
+
+// Lib RTL Files

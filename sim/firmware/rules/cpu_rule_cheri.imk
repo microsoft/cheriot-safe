@@ -1,0 +1,93 @@
+# Copyright (C) Microsoft Corporation. All rights reserved.
+
+#CMPVER = pluton
+CMPVER = cheriot
+
+ARCH_CC := clang
+ARCH_CXX := clang++
+ARCH_LD := ld.lld
+ARCH_LIBRARIAN := llvm-ar
+ARCH_OBJDUMP := llvm-objdump
+ARCH_OBJDUMP_FLAGS := -xdhSC --mcpu=cheriot --cap-relocs
+ARCH_OBJCOPY := riscv64-unknown-elf-objcopy
+ARCH_ADDR2LINE = llvm-addr2line
+ARCH_STRIP = llvm-strip
+
+ARCH_CFLAGS := \
+	-target riscv32-unknown-unknown \
+	-mcmodel=small \
+	-mcpu=${CMPVER} \
+	-mabi=${CMPVER} \
+	-mxcheri-rvc \
+	-mrelax \
+	-std=c2x \
+	-fomit-frame-pointer \
+	-fno-builtin \
+	-fno-exceptions \
+	-fno-rtti \
+	-nostdinc \
+	-Oz \
+	-g \
+	-Wno-incompatible-library-redeclaration \
+	-Wno-deprecated \
+	-Werror \
+
+ARCH_CXXFLAGS := \
+	-target riscv32-unknown-unknown \
+	-mcmodel=small \
+	-mcpu=${CMPVER} \
+	-mabi=${CMPVER} \
+	-mxcheri-rvc \
+	-mrelax \
+	-std=c++17 \
+	-fomit-frame-pointer \
+	-fno-builtin \
+	-fno-exceptions \
+	-fno-rtti \
+	-nostdinc \
+	-Oz \
+	-g \
+	-Wno-incompatible-library-redeclaration \
+	-Wno-deprecated \
+	-Werror \
+
+#	-ffreestanding \
+#	-mcpu=pluton \
+#	-mabi=pluton \
+#	-march=rv32imac \
+#	-mabi=ilp32 \
+#	-mcmodel=medlow \
+#	-nostartfiles \
+#	-ffunction-sections \
+#	-fdata-sections \
+#	-Wall \
+#	-g \
+#	-mabi=ilp32 \
+#	-mcmodel=medlow \
+#  -fno-rtti \
+#	-std=c++17 \
+#	-mno-fdiv \
+
+
+ARCH_LDFLAGS := \
+
+#	-fno-exceptions \
+
+#	-march=rv32imac \
+#	-mabi=ilp32 \
+#	-mcmodel=medlow \
+#	-nostartfiles \
+#	-ffunction-sections \
+#	-fdata-sections \
+#	-Wall \
+#	-g \
+#	-mabi=ilp32 \
+#	-mcmodel=medlow \
+#  -fno-rtti \
+#	-std=c++17 \
+#	-nostdlib \
+#	-Wl,--gc-sections \
+#	-Wl,-Map,$(OUTDIR)/$(TEST).map \
+#	-Wl,--start-group \
+#	-Wl,--end-group \
+

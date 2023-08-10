@@ -1,0 +1,1 @@
+SOURCES = ${TEST_PATH}/hello_world.cc

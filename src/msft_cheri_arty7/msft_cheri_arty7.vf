@@ -1,0 +1,38 @@
+// Define Paths
++define+STITCH_GIT_HEAD=8965862
++define+STITCH_CLOCK_SECONDS=1691682833
+
+// Include Paths
+
+// Lib Include Paths
+
+// Package Files
+$MSFT_CHERI_ARTY7/msftDvDebug_jtag2AxiApb_pkg.sv
+
+// Lib Package Files
+
+// RTL Files
+$MSFT_CHERI_ARTY7/IOBUF.v
+$MSFT_CHERI_ARTY7/IBUF.v
+$MSFT_CHERI_ARTY7/OBUF.v
+$MSFT_CHERI_ARTY7/PULLUP.v
+$MSFT_CHERI_ARTY7/PULLDOWN.v
+$MSFT_CHERI_ARTY7/msftDvIp_cheri_arty7_fpga.sv
+$MSFT_CHERI_ARTY7/BUFG.v
+$MSFT_CHERI_ARTY7/MMCME2_ADV.v
+$MSFT_CHERI_ARTY7/msftDvIp_mmcm_arty7_0.sv
+$MSFT_CHERI_ARTY7/msftDvIp_led_alive.sv
+//$MSFT_CHERI_ARTY7/msftDvIp_axi_mem_bit_write.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_sync_pulse_gen.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_globals.sv
+$MSFT_CHERI_ARTY7/msftDvDbug_apb_mux.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_v1.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_apb_mgr_sm.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_jtag_tap.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_jtag2AxiApb.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_spiSlave.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_i2c_sub_base.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_i2c_sub.sv
+$MSFT_CHERI_ARTY7/msftDvDebug_apb_mux.sv
+
+// Lib RTL Files

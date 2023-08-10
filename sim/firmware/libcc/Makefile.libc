@@ -1,0 +1,52 @@
+.DEFAULT_GOAL := all
+
+DEFINES =
+
+MAKE_INC_DIR = $(STEM)/fortress/firmware/lib/make_inc
+include $(MAKE_INC_DIR)/Makefile.paths
+
+#===============================================
+# common AESIR settings
+#===============================================
+BUILD_VERBOSE         = 1
+CUSTOM_ARCH_RULES_DIR = $(FORTRESS_LIB_DIR)/cpu_rules
+TARGETTYPE            = LIBRARY
+TARGET_DESTINATION    = $(BUILD_DIR)
+
+# Need a unique directory to avoid parallel compilation conflicts
+# OBJ_DIR   = $(STEM)/out/temp/libs/libc/$(SUBSYSTEM)/$(CPU_NAME)
+OBJ_DIR     = $(BUILD_DIR)
+TARGETNAME := libc_$(SUBSYSTEM)
+
+#===============================================
+# Set Source Directories
+#===============================================
+SOURCE_DIR = $(FORTRESS_LIBC_DIR)/src/stdlib \
+             $(FORTRESS_LIBC_DIR)/src/stdio  \
+             $(FORTRESS_LIBC_DIR)/src/string \
+             $(FORTRESS_LIBC_DIR)/src/packet \
+             $(FORTRESS_LIBC_DIR)/src/irq    \
+             $(FORTRESS_LIBC_DIR)/src/edc    \
+             $(FORTRESS_LIBC_DIR)/src/virtual
+
+#===============================================
+# Get Sources
+#===============================================
+C_SOURCES  = $(foreach DIR,$(SOURCE_DIR),$(wildcard $(DIR)/*.c))
+SS_SOURCES = $(foreach DIR,$(SOURCE_DIR),$(wildcard $(DIR)/*.s))
+S_SOURCES  = $(foreach DIR,$(SOURCE_DIR),$(wildcard $(DIR)/*.S))
+SOURCES    = $(C_SOURCES) $(SS_SOURCES) $(S_SOURCES)
+
+#===============================================
+# Include Directories
+#===============================================
+CFLAGS = -c $(ARCH_CFLAGS) -O1 -I$(FORTRESS_LIBC_DIR)/inc -I$(BUILD_DIR) $(DEFINES) -I$(FORTRESS_LIB_INC_DIR)
+
+ifneq ($(strip $(SILENCE_PPRINTF)),)
+  CFLAGS += -DSILENCE_PPRINTF=1 # FYI: CFLAGS is not processed by build.imk because of: ifneq ($(BUILDINFO),)
+endif
+
+.PHONY: default all clean
+include $(AESIR_ROOT)/build.imk
+
+all: target
