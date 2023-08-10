@@ -3,7 +3,7 @@
 +define+STITCH_CLOCK_SECONDS=1691682833
 
 // Include Paths
-+incdir+/home/gyley/hardware/cores/antifortress/dvip-cm0/dvip/tools/stitch/verilog
++incdir+$MSFT_CHERI_SUBSYSTEM
 
 // Lib Include Paths
 
