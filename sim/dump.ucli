@@ -1,0 +1,4 @@
+fsdbDumpfile level_tb1.fsdb
+fsdbDumpvars 0 level_tb1 +all
+run
+quit

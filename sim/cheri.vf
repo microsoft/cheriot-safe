@@ -1,6 +1,0 @@
-
-
--f ${CHERIOT_SAFE_DIR}/src/msft_cheri_core/msft_cheri_core.vf
--f ${CHERIOT_SAFE_DIR}/src/msft_cheri_subsystem/msft_cheri_subsystem.vf
--f ${CHERIOT_SAFE_DIR}/src/msft_cheri_arty7/msft_cheri_arty7.vf
--f ${CHERIOT_SAFE_DIR}/src/msft_cheri_tb/msft_cheri_tb.vf

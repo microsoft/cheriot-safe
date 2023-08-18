@@ -9,7 +9,8 @@ PROJECT =
 TEST = 
 C_DEFINES =
 #OUTDIR = ${CURDIR}
-OUTDIR = ${CHERIOT_SAFE_DIR}/out/run/${TEST}
+OUTDIR = ${CHERIOT_SAFE_DIR}/out/run/${TEST}/firmware
+CPU = cpu0
 
 #==================================
 # PATHS
@@ -79,7 +80,7 @@ VNCSTR = vnc run -Ix -Ir -wl -r redhat8
 # Targets
 #==================================
 .PHONY: default all clean
-all: ${OUTDIR}/../${CPU}_iram.vhx $(OUTDIR)/$(TEST).dis GENIROM
+all: ${OUTDIR}/${CPU}_iram.vhx $(OUTDIR)/$(TEST).dis GENIROM ${OUTDIR}/${TEST}.bin
 #all: ${OUTDIR}/../${CPU}_iram.vhx $(OUTDIR)/$(TEST).dis
 default: all
 
@@ -129,12 +130,8 @@ $(OUTDIR)/$(TEST).vhx: $(OUTDIR)/$(TEST).elf
 
 # Execute ECC GEN
 ${OUTDIR}/${CPU}_iram.vhx: ${OUTDIR}/${TEST}.vhx
-	${ECC_GEN_PATH} -a 16 -b 32 -m 64 -e -t 20040000 -o $@ $<
+	python ${SCRIPTS_DIR}/vhex2vhex.py $^ $@ -b 4
 
-# Copy file to the execution place
-${OUTDIR}/../${CPU}_iram.vhx: ${OUTDIR}/${CPU}_iram.vhx
-	cp $^ ../.
- 
 # Generate IROM
 #            IMM     	RD    OPCODE
 #            0x00080  0x5   0x17
@@ -144,11 +141,11 @@ JAL_INST   = "000282E7"
 GENIROM:
 	rm -f ${OUTDIR}/../${CPU}_irom.vhx
 	number=0 ; while [[ $$number -lt 32 ]] ; do 						\
-	  echo "00000000" >>  ${OUTDIR}/../${CPU}_irom.vhx ;	\
+	  echo "00000000" >>  ${OUTDIR}/${CPU}_irom.vhx ;	\
 		((number = number + 1)) ; 													\
 	done
-	echo ${AUIPC_INST}    >> ${OUTDIR}/../${CPU}_irom.vhx
-	echo ${JAL_INST}    	>> ${OUTDIR}/../${CPU}_irom.vhx
-	echo "00000000"     	>> ${OUTDIR}/../${CPU}_irom.vhx
+	echo ${AUIPC_INST}    >> ${OUTDIR}/${CPU}_irom.vhx
+	echo ${JAL_INST}    	>> ${OUTDIR}/${CPU}_irom.vhx
+	echo "00000000"     	>> ${OUTDIR}/${CPU}_irom.vhx
 	echo "GENROM Done"
 
