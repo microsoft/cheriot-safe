@@ -51,7 +51,6 @@ module msftDvIp_mmcm_arty7_0
   wire        clkfbstopped_unused;
   wire        clkinstopped_unused;
 
-`define XILINX_PLL_MODEL__
 `ifdef XILINX_PLL_MODEL__
   // This model is to be used only for simulation when the Xilinx Simulation model is not available. 
   reg [2:0] div_clk;

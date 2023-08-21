@@ -37,7 +37,7 @@ all:
 
 build:
 	mkdir -p ${BUILD_DIR}
-	cd ${BUILD_DIR} && ${VCS_CMD} ${RTL_SOURCES} -sverilog -debug_access+all -timescale=1ns/10ps -l sim.log
+	cd ${BUILD_DIR} && ${VCS_CMD} ${RTL_SOURCES} ${BUILD_FLAGS} -sverilog -debug_access+all -timescale=1ns/10ps -l sim.log
 
 run:
 	mkdir -p ${TEST_DIR}
