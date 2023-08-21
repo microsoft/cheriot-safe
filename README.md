@@ -28,3 +28,7 @@ cd <ws>
 git submodule update --init --recursive
 ```
 
+## Building and running a simulation
+1. Review the ./sim/Makefile for the correct path to the vcs simulator.
+2. Execute: ./trun hello_world
+3. Test output is in ./out/run/hello_world/...

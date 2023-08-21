@@ -22,6 +22,7 @@ SIM_DIR = ${CHERIOT_SAFE_DIR}/sim
 BUILD_DIR = ${CHERIOT_SAFE_DIR}/out/sim/vcs
 TEST_DIR  = ${CHERIOT_SAFE_DIR}/out/run/${TEST}
 
+BUILD_FLAGS = +define+XILINX_PLL_MODEL__
 
 RTL_SOURCES  = -f ${CHERIOT_SAFE_DIR}/src/msft_cheri_core/msft_cheri_core.vf
 RTL_SOURCES += -f ${CHERIOT_SAFE_DIR}/src/msft_cheri_subsystem/msft_cheri_subsystem.vf

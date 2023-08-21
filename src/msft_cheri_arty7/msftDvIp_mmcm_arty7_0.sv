@@ -51,6 +51,32 @@ module msftDvIp_mmcm_arty7_0
   wire        clkfbstopped_unused;
   wire        clkinstopped_unused;
 
+`define XILINX_PLL_MODEL__
+`ifdef XILINX_PLL_MODEL__
+  // This model is to be used only for simulation when the Xilinx Simulation model is not available. 
+  reg [2:0] div_clk;
+  reg       clk20Mhz;
+  assign    clk20Mhz_o = clk20Mhz;
+
+  assign clk200Mhz_o = sysClk_i & RESETn_i;
+
+  always @(posedge sysClk_i)
+  begin
+    if(~RESETn_i) begin
+      div_clk <= 3'h0; 
+      clk20Mhz <= 1'b0;
+    end else begin
+      if(div_clk == 3'h3) begin
+        div_clk <= 3'h0;
+        clk20Mhz <= ~clk20Mhz;
+      end else begin
+        div_clk <= div_clk + 1'b1;
+      end 
+    end
+  end
+
+`else
+
   MMCME2_ADV
   #(.BANDWIDTH            ("OPTIMIZED"),
 //    .CLKOUT4_CASCADE      ("FALSE"),
@@ -167,5 +193,5 @@ module msftDvIp_mmcm_arty7_0
 //  BUFG clkout6_buf
 //   (.O   (fftClk_o),
 //    .I   (fftClk));
-
+`endif
 endmodule
