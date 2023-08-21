@@ -1,7 +1,6 @@
 # Project
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+Cheriot-safe (CHERIoT small and fast FPGA emulator)  is an complete FPGA platform for CHERIoT hardware prototyping and software development. It includes a cheriot-ibex core, CHERIoT-enabled risc-v debug modules, TCM memories, an AXI-based internal bus fabric, and a collection of commonly used peripherals. 
 
 ## Trademarks
 
@@ -32,3 +31,7 @@ git submodule update --init --recursive
 1. Review the ./sim/Makefile for the correct path to the vcs simulator.
 2. Execute: ./trun hello_world
 3. Test output is in ./out/run/hello_world/...
+
+## Supported FPGA Boards
+Currently cheriot-safe supports the Diligent Arty A7-100T board. 
+
