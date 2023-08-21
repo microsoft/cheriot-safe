@@ -146,31 +146,8 @@ def addCopyRight(path):
           lines = fh.readlines()
       
         has_cr = False
-#        # Check for copyright
-#        line_cnt = 0
-#        for line in lines:
-#          if line.find(copyright) != -1:
-#            print("File aleady has copyright %s %s"%(f, line)) 
-#            has_cr = True
-#            break
-#
-#          elif line.find("Copyright") != -1:
-#            lines[line_cnt] = getCopyRight(exttype)
-#            fchanged +=1
-#            has_cr = True
-#            print("File aleady has copyright %s Replacing: %s"%(f, line)) 
-#            break 
-#
-#          line_cnt += 1
-
-
         # Generate Copyright
-#        if not has_cr:
         fchanged +=1
-#          crstr = getCopyRight(exttype)
-#          print(f+"==>"+crstr)
-#        else:
-#          print("LINE: "+lines[line_cnt])
         with open(f,"w") as fo:
           fo.write('\n')
           fo.write(getCopyRight(exttype))

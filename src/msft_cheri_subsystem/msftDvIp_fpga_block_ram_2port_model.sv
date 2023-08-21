@@ -15,8 +15,6 @@
 // limitations under the License.
 // =====================================================
 
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
 //===============================================
 //      Self contained memories for DVP
 //===============================================

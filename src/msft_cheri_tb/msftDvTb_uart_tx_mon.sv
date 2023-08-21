@@ -15,8 +15,6 @@
 // limitations under the License.
 // =====================================================
 
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
 module msftDvTb_uart_tx_mon #(
     parameter DO_PRINT = 0,
     parameter TEST_ARG_PREFIX = "HSP",

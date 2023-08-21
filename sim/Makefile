@@ -41,7 +41,7 @@ build:
 run:
 	mkdir -p ${TEST_DIR}
 	make -f ${CHERIOT_SAFE_DIR}/sim/firmware/Makefile TEST=${TEST}
-	cd ${TEST_DIR} && make -f ${PACKAGE_DIR}/include/Makefile.dpi.so PACKAGE=Apb
+	cd ${TEST_DIR} && make -f ${PACKAGE_DIR}/include/Makefile.dpi.so.mk PACKAGE=Apb
 	rm -f ${TEST_DIR}/simv
 	rm -f ${TEST_DIR}/simv.daidir
 	ln -s ${BUILD_DIR}/simv ${TEST_DIR}/.

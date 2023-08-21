@@ -15,8 +15,6 @@
 // limitations under the License.
 // =====================================================
 
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
 //Future enhancements
 // - early write response
 // - pipeline

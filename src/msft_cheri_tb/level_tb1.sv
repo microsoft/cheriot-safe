@@ -15,8 +15,6 @@
 // limitations under the License.
 // =====================================================
 
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
 
 // This File is Auto Generated do not edit
 

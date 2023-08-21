@@ -15,8 +15,6 @@
 // limitations under the License.
 // =====================================================
 
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
 
 module msftDvIp_fpga_block_ram_model #(
   parameter integer RAM_WIDTH = 32,

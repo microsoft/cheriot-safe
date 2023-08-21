@@ -15,8 +15,6 @@
 // limitations under the License.
 // =====================================================
 
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
 // This File is Auto Generated do not edit
 module msftDvIp_msftDvIp_cheri_axi_fabric_mgr_mux #(
     parameter APHASE_LEN=10,

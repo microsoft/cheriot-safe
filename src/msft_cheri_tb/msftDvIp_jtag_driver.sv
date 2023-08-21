@@ -15,9 +15,6 @@
 // limitations under the License.
 // =====================================================
 
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
-
 
 module msftDvIp_jtag_driver (
   input               pclk_i,
