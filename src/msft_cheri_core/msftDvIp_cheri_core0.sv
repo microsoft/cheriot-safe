@@ -1,19 +1,4 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
+// Copyright (C) Microsoft Corporation. All rights reserved.
 
 
 // This File is Auto Generated do not edit
@@ -53,8 +38,6 @@ module msftDvIp_cheri_core0 #(
   output                                     tsmap_cs_o,
   output [15:0]                              tsmap_addr_o,
   input  [DATA_WIDTH-1:0]                    tsmap_rdata_i,
-  input  [127:0]                             mmreg_corein_i,
-  output [63:0]                              mmreg_coreout_o,
   output [4-1:0]                             arid_cpu_m_o,
   output [32-1:0]                            araddr_cpu_m_o,
   output [8-1:0]                             arlen_cpu_m_o,
@@ -103,11 +86,7 @@ module msftDvIp_cheri_core0 #(
   input                                      TDI_i,
   output                                     TDO_o,
   output                                     TDOoen_o,
-  input                                      irq_software_i,
-  input                                      irq_timer_i,
-  input                                      irq_external_i,
-  input                                      irq_nm_i,
-  input  [14:0]                              irq_fast_i
+  input                                      irq_periph_i
 );
 
 // ==================================================
@@ -139,8 +118,6 @@ wire                                     DRAM_ERROR;
 wire                                     tsmap_cs;
 wire [15:0]                              tsmap_addr;
 wire [DATA_WIDTH-1:0]                    tsmap_rdata;
-wire [127:0]                             mmreg_corein;
-wire [63:0]                              mmreg_coreout;
 wire [4-1:0]                             arid_cpu_m;
 wire [32-1:0]                            araddr_cpu_m;
 wire [8-1:0]                             arlen_cpu_m;
@@ -189,11 +166,7 @@ wire                                     TMS;
 wire                                     TDI;
 wire                                     TDO;
 wire                                     TDOoen;
-wire                                     irq_software;
-wire                                     irq_timer;
-wire                                     irq_external;
-wire                                     irq_nm;
-wire [14:0]                              irq_fast;
+wire                                     irq_periph;
 
 // ==================================================
 // Pre Code Insertion
@@ -216,6 +189,11 @@ wire [31:0]                              data_addr;
 wire [32:0]                              data_wdata;
 wire [6:0]                               data_wdata_intg;
 wire [32:0]                              data_rdata;
+wire [127:0]                             mmreg_corein;
+wire [63:0]                              mmreg_coreout;
+wire                                     irq_software;
+wire                                     irq_timer;
+wire                                     irq_external;
 wire                                     scramble_req;
 wire                                     debug_req;
 wire                                     double_fault_seen;
@@ -247,13 +225,24 @@ wire                                     DBGMEM_READY;
 wire                                     DBGMEM_ERROR;
 
 // ==================================================
-// Instance msftDvIp_obimux3 wire definitions
+// Instance msftDvIp_obimux3w0 wire definitions
 // ==================================================
 wire                                     data_error;
 wire                                     instr_error;
-wire [33-1:0]                            IROM_WDATA;
+wire                                     TCDEV_EN;
+wire [31:0]                              TCDEV_ADDR;
+wire [32:0]                              TCDEV_WDATA;
+wire                                     TCDEV_WE;
+wire [3:0]                               TCDEV_BE;
+wire [32:0]                              TCDEV_RDATA;
+wire                                     TCDEV_READY;
+wire [32:0]                              IROM_WDATA;
 wire                                     IROM_WE;
 wire [3:0]                               IROM_BE;
+
+// ==================================================
+// Instance msftDvIp_tcdev_wrapper wire definitions
+// ==================================================
 
 // ==================================================
 // Unconnected Pins
@@ -303,8 +292,8 @@ msftDvIp_cheri_core_wrapper #(
   .irq_software_i                ( irq_software                             ),
   .irq_timer_i                   ( irq_timer                                ),
   .irq_external_i                ( irq_external                             ),
-  .irq_fast_i                    ( irq_fast                                 ),
-  .irq_nm_i                      ( irq_nm                                   ),
+  .irq_fast_i                    ( 15'h0                                    ),
+  .irq_nm_i                      ( 1'b0                                     ),
   .scramble_key_valid_i          ( 1'b0                                     ),
   .scramble_key_i                ( 128'h0                                   ),
   .scramble_nonce_i              ( 64'h0                                    ),
@@ -365,11 +354,11 @@ msftDvIp_riscv_cheri_debug #(
 // ==================================================
 
 // ==================================================
-// Instance msftDvIp_obimux3
+// Instance msftDvIp_obimux3w0
 // ==================================================
-msftDvIp_obimux3 #(
+msftDvIp_obimux3w0 #(
   .DATA_WIDTH(DATA_WIDTH)
-  ) msftDvIp_obimux3_i (
+  ) msftDvIp_obimux3w0_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),
   .data_req_i                    ( data_req                                 ),
@@ -404,6 +393,14 @@ msftDvIp_obimux3 #(
   .DBGMEM_RDATA_i                ( DBGMEM_RDATA                             ),
   .DBGMEM_READY_i                ( DBGMEM_READY                             ),
   .DBGMEM_ERROR_i                ( DBGMEM_ERROR                             ),
+  .TCDEV_EN_o                    ( TCDEV_EN                                 ),
+  .TCDEV_ADDR_o                  ( TCDEV_ADDR                               ),
+  .TCDEV_WDATA_o                 ( TCDEV_WDATA                              ),
+  .TCDEV_WE_o                    ( TCDEV_WE                                 ),
+  .TCDEV_BE_o                    ( TCDEV_BE                                 ),
+  .TCDEV_RDATA_i                 ( TCDEV_RDATA                              ),
+  .TCDEV_READY_i                 ( TCDEV_READY                              ),
+  .TCDEV_ERROR_i                 ( 1'b0                                     ),
   .IROM_EN_o                     ( IROM_EN                                  ),
   .IROM_ADDR_o                   ( IROM_ADDR                                ),
   .IROM_WDATA_o                  ( IROM_WDATA                               ),
@@ -469,6 +466,31 @@ msftDvIp_obimux3 #(
 
 
 // ==================================================
+//  Inst Pre Code 
+// ==================================================
+
+// ==================================================
+// Instance msftDvIp_tcdev_wrapper
+// ==================================================
+msftDvIp_tcdev_wrapper msftDvIp_tcdev_wrapper_i (
+  .clk_i                         ( clk                                      ),
+  .rstn_i                        ( rstn                                     ),
+  .reg_en_i                      ( TCDEV_EN                                 ),
+  .reg_addr_i                    ( TCDEV_ADDR                               ),
+  .reg_wdata_i                   ( TCDEV_WDATA                              ),
+  .reg_we_i                      ( TCDEV_WE                                 ),
+  .reg_rdata_o                   ( TCDEV_RDATA                              ),
+  .reg_ready_o                   ( TCDEV_READY                              ),
+  .mmreg_coreout_i               ( mmreg_coreout                            ),
+  .mmreg_corein_o                ( mmreg_corein                             ),
+  .irq_periph_i                  ( irq_periph                               ),
+  .irq_external_o                ( irq_external                             ),
+  .irq_software_o                ( irq_software                             ),
+  .irq_timer_o                   ( irq_timer                                )
+);
+
+
+// ==================================================
 //  Connect IO Pins
 // ==================================================
 assign clk = clk_i;
@@ -497,8 +519,6 @@ assign DRAM_ERROR = DRAM_ERROR_i;
 assign tsmap_cs_o = tsmap_cs;
 assign tsmap_addr_o = tsmap_addr;
 assign tsmap_rdata = tsmap_rdata_i;
-assign mmreg_corein = mmreg_corein_i;
-assign mmreg_coreout_o = mmreg_coreout;
 assign arid_cpu_m_o = arid_cpu_m;
 assign araddr_cpu_m_o = araddr_cpu_m;
 assign arlen_cpu_m_o = arlen_cpu_m;
@@ -547,11 +567,7 @@ assign TMS = TMS_i;
 assign TDI = TDI_i;
 assign TDO_o = TDO;
 assign TDOoen_o = TDOoen;
-assign irq_software = irq_software_i;
-assign irq_timer = irq_timer_i;
-assign irq_external = irq_external_i;
-assign irq_nm = irq_nm_i;
-assign irq_fast = irq_fast_i;
+assign irq_periph = irq_periph_i;
 
 endmodule
 

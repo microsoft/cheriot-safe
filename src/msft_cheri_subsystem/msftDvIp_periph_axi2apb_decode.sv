@@ -1,19 +1,4 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
+// Copyright (C) Microsoft Corporation. All rights reserved.
 
 
 // This File is Auto Generated do not edit
@@ -76,14 +61,6 @@ module msftDvIp_periph_axi2apb_decode #(
   output [31:0]                              pwdata_m_apb_o,
   output                                     pwrite_m_apb_o,
   output [3:0]                               pstrb_m_apb_o,
-  output                                     psel_mmreg_o,
-  output                                     penable_mmreg_o,
-  output [31:0]                              paddr_mmreg_o,
-  output [31:0]                              pwdata_mmreg_o,
-  output                                     pwrite_mmreg_o,
-  input  [31:0]                              prdata_mmreg_i,
-  input                                      pready_mmreg_i,
-  input                                      psuberr_mmreg_i,
   output                                     psel_intc_o,
   output                                     penable_intc_o,
   output [31:0]                              paddr_intc_o,
@@ -218,14 +195,6 @@ wire [31:0]                              paddr_m_apb;
 wire [31:0]                              pwdata_m_apb;
 wire                                     pwrite_m_apb;
 wire [3:0]                               pstrb_m_apb;
-wire                                     psel_mmreg;
-wire                                     penable_mmreg;
-wire [31:0]                              paddr_mmreg;
-wire [31:0]                              pwdata_mmreg;
-wire                                     pwrite_mmreg;
-wire [31:0]                              prdata_mmreg;
-wire                                     pready_mmreg;
-wire                                     psuberr_mmreg;
 wire                                     psel_intc;
 wire                                     penable_intc;
 wire [31:0]                              paddr_intc;
@@ -328,7 +297,6 @@ wire                                     psuberr_mgr;
 // ==================================================
 // Instance msftDvIp_periph_axi2apb_decode_decoder wire definitions
 // ==================================================
-wire [(32/8)-1:0]                        pstrb_mmreg;
 wire [(32/8)-1:0]                        pstrb_intc;
 wire [(32/8)-1:0]                        pstrb_tmr0;
 wire [(32/8)-1:0]                        pstrb_tmr1;
@@ -422,15 +390,6 @@ msftDvIp_periph_axi2apb_decode_decoder msftDvIp_periph_axi2apb_decode_decoder_i 
   .pwdata_sub_o                  ( pwdata_m_apb                             ),
   .pwrite_sub_o                  ( pwrite_m_apb                             ),
   .pstrb_sub_o                   ( pstrb_m_apb                              ),
-  .psel_mmreg_o                  ( psel_mmreg                               ),
-  .penable_mmreg_o               ( penable_mmreg                            ),
-  .paddr_mmreg_o                 ( paddr_mmreg                              ),
-  .pwdata_mmreg_o                ( pwdata_mmreg                             ),
-  .pwrite_mmreg_o                ( pwrite_mmreg                             ),
-  .pstrb_mmreg_o                 ( pstrb_mmreg                              ),
-  .prdata_mmreg_i                ( prdata_mmreg                             ),
-  .pready_mmreg_i                ( pready_mmreg                             ),
-  .psuberr_mmreg_i               ( psuberr_mmreg                            ),
   .psel_intc_o                   ( psel_intc                                ),
   .penable_intc_o                ( penable_intc                             ),
   .paddr_intc_o                  ( paddr_intc                               ),
@@ -576,14 +535,6 @@ assign paddr_m_apb_o = paddr_m_apb;
 assign pwdata_m_apb_o = pwdata_m_apb;
 assign pwrite_m_apb_o = pwrite_m_apb;
 assign pstrb_m_apb_o = pstrb_m_apb;
-assign psel_mmreg_o = psel_mmreg;
-assign penable_mmreg_o = penable_mmreg;
-assign paddr_mmreg_o = paddr_mmreg;
-assign pwdata_mmreg_o = pwdata_mmreg;
-assign pwrite_mmreg_o = pwrite_mmreg;
-assign prdata_mmreg = prdata_mmreg_i;
-assign pready_mmreg = pready_mmreg_i;
-assign psuberr_mmreg = psuberr_mmreg_i;
 assign psel_intc_o = psel_intc;
 assign penable_intc_o = penable_intc;
 assign paddr_intc_o = paddr_intc;

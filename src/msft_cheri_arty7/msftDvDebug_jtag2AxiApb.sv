@@ -1,19 +1,4 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
+// Copyright (C) Microsoft Corporation. All rights reserved.
 
 
 
@@ -120,7 +105,7 @@ begin
     if(dr_shift) begin
       jtag_shift[APB_SCMD_SHIFT_WIDTH-1:0] <= {TDI, jtag_shift[APB_SCMD_WIDTH-1:1]};
     end else if(dr_capture) begin
-      jtag_shift[APB_RESP_WIDTH-1:0] = apb_resp;
+      jtag_shift[APB_RESP_WIDTH-1:0] <= apb_resp;
     end else if(dr_update) begin
       jtag_capture[APB_SCMD_WIDTH-1:0] <= jtag_shift[APB_SCMD_WIDTH-1:0];
     end
@@ -128,7 +113,7 @@ begin
     if(dr_shift) begin
       jtag_shift[APB_CMD_SHIFT_WIDTH-1:0] <= {TDI, jtag_shift[APB_CMD_WIDTH-1:1]};
     end else if(dr_capture) begin
-      jtag_shift[APB_RESP_WIDTH-1:0] = apb_resp;
+      jtag_shift[APB_RESP_WIDTH-1:0] <= apb_resp;
     end else if(dr_update) begin
       jtag_capture[APB_CMD_WIDTH-1:0] <= jtag_shift[APB_CMD_WIDTH-1:0];
     end
@@ -136,7 +121,7 @@ begin
     if(dr_shift) begin
       jtag_shift[AXI_SCMD_WIDTH-1:0] <= {TDI, jtag_shift[AXI_SCMD_WIDTH-1:1]};
     end else if(dr_capture) begin
-      jtag_shift[AXI_RESP_WIDTH-1:0] = axi_resp;
+      jtag_shift[AXI_RESP_WIDTH-1:0] <= axi_resp;
     end else if(dr_update) begin
       jtag_capture[AXI_SCMD_WIDTH-1:0] <= jtag_shift[AXI_SCMD_WIDTH-1:0];
     end
@@ -144,7 +129,7 @@ begin
     if(dr_shift) begin
       jtag_shift[AXI_CMD_WIDTH-1:0] <= {TDI, jtag_shift[AXI_CMD_WIDTH-1:1]};
     end else if(dr_capture) begin
-      jtag_shift[AXI_RESP_WIDTH-1:0] = axi_resp;
+      jtag_shift[AXI_RESP_WIDTH-1:0] <= axi_resp;
     end else if(dr_update) begin
       jtag_capture[AXI_CMD_WIDTH-1:0] <= jtag_shift[AXI_CMD_WIDTH-1:0];
     end

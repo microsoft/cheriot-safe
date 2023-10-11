@@ -1,19 +1,4 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
+// Copyright (C) Microsoft Corporation. All rights reserved.
 
 
 // This File is Auto Generated do not edit
@@ -142,9 +127,7 @@ module msftDvIp_periph_wrapper_v0 #(
   input                                      dw_sck,
   input  [3:0]                               dw_mosi,
   output [3:0]                               dw_miso,
-  input  [3:0]                               dw_oen,
-  input  [63:0]                              mmreg_coreout_i,
-  output [127:0]                             mmreg_corein_o
+  input  [3:0]                               dw_oen
 );
 
 // ==================================================
@@ -254,8 +237,6 @@ wire [31:0]                              gpio0_oen;
 wire [31:0]                              gpio1_in;
 wire [31:0]                              gpio1_out;
 wire [31:0]                              gpio1_oen;
-wire [63:0]                              mmreg_coreout;
-wire [127:0]                             mmreg_corein;
 
 // ==================================================
 // Pre Code Insertion
@@ -269,14 +250,6 @@ wire [31:0]                              paddr_m_apb;
 wire [31:0]                              pwdata_m_apb;
 wire                                     pwrite_m_apb;
 wire [3:0]                               pstrb_m_apb;
-wire                                     psel_mmreg;
-wire                                     penable_mmreg;
-wire [31:0]                              paddr_mmreg;
-wire [31:0]                              pwdata_mmreg;
-wire                                     pwrite_mmreg;
-wire [31:0]                              prdata_mmreg;
-wire                                     pready_mmreg;
-wire                                     psuberr_mmreg;
 wire                                     psel_intc;
 wire                                     penable_intc;
 wire [31:0]                              paddr_intc;
@@ -439,10 +412,6 @@ wire [31:0]                              gpio1_alt2_in;
 wire [31:0]                              gpio1_alt2_oen;
 
 // ==================================================
-// Instance msftDvIp_mmreg wire definitions
-// ==================================================
-
-// ==================================================
 // Unconnected Pins
 // ==================================================
 
@@ -503,14 +472,6 @@ msftDvIp_periph_axi2apb_decode msftDvIp_periph_axi2apb_decode_i (
   .pwdata_m_apb_o                ( pwdata_m_apb                             ),
   .pwrite_m_apb_o                ( pwrite_m_apb                             ),
   .pstrb_m_apb_o                 ( pstrb_m_apb                              ),
-  .psel_mmreg_o                  ( psel_mmreg                               ),
-  .penable_mmreg_o               ( penable_mmreg                            ),
-  .paddr_mmreg_o                 ( paddr_mmreg                              ),
-  .pwdata_mmreg_o                ( pwdata_mmreg                             ),
-  .pwrite_mmreg_o                ( pwrite_mmreg                             ),
-  .prdata_mmreg_i                ( prdata_mmreg                             ),
-  .pready_mmreg_i                ( pready_mmreg                             ),
-  .psuberr_mmreg_i               ( psuberr_mmreg                            ),
   .psel_intc_o                   ( psel_intc                                ),
   .penable_intc_o                ( penable_intc                             ),
   .paddr_intc_o                  ( paddr_intc                               ),
@@ -934,29 +895,6 @@ msftDvIp_gpio #(
 
 
 // ==================================================
-//  Inst Pre Code 
-// ==================================================
-
-// ==================================================
-// Instance msftDvIp_mmreg
-// ==================================================
-msftDvIp_mmreg msftDvIp_mmreg_i (
-  .pclk_i                        ( clk                                      ),
-  .prstn_i                       ( rstn                                     ),
-  .psel_i                        ( psel_mmreg                               ),
-  .penable_i                     ( penable_m_apb                            ),
-  .paddr_i                       ( paddr_m_apb[7:0]                         ),
-  .pwdata_i                      ( pwdata_m_apb                             ),
-  .pwrite_i                      ( pwrite_m_apb                             ),
-  .prdata_o                      ( prdata_mmreg                             ),
-  .pready_o                      ( pready_mmreg                             ),
-  .pslverr_o                     ( pslverr                                  ),
-  .mmreg_coreout_i               ( mmreg_coreout                            ),
-  .mmreg_corein_o                ( mmreg_corein                             )
-);
-
-
-// ==================================================
 //  Connect IO Pins
 // ==================================================
 assign clk = clk_i;
@@ -1074,8 +1012,6 @@ assign gpio1_oen_o = gpio1_oen;
 
 
 
-assign mmreg_coreout = mmreg_coreout_i;
-assign mmreg_corein_o = mmreg_corein;
 
 endmodule
 

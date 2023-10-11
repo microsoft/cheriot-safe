@@ -1,19 +1,4 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
+// Copyright (C) Microsoft Corporation. All rights reserved.
 
 
 // This File is Auto Generated do not edit
@@ -543,11 +528,6 @@ wire [3:0]                               dw_oen;
 // ==================================================
 // Instance msftDvIp_cheri_core0 wire definitions
 // ==================================================
-wire                                     irq_software;
-wire                                     irq_timer;
-wire                                     irq_external;
-wire                                     irq_nm;
-wire [14:0]                              irq_fast;
 
 // ==================================================
 // Instance shared_ram wire definitions
@@ -561,7 +541,9 @@ wire [14:0]                              irq_fast;
 //  Inst Pre Code 
 // ==================================================
 `define SS_IROM_PATH msftDvIp_riscv_memory_v0_i.irom
+`ifndef VERILATOR
 defparam `SS_IROM_PATH.RAM_BACK_DOOR_ENABLE=1;
+`endif
   assign `SS_IROM_PATH.accen_bkdr = bd1_irom_accen;
   assign `SS_IROM_PATH.cs_bkdr = bd1_irom_cs;
   assign `SS_IROM_PATH.addr_bkdr = bd1_irom_addr;
@@ -570,8 +552,10 @@ defparam `SS_IROM_PATH.RAM_BACK_DOOR_ENABLE=1;
   assign bd1_irom_dout = `SS_IROM_PATH.dout;
   assign bd1_irom_ready = `SS_IROM_PATH.rdy_bkdr;
 `define SS_IRAM_PATH msftDvIp_riscv_memory_v0_i.iram
-  defparam `SS_IRAM_PATH.RAM_BACK_DOOR_ENABLE = 1;
   assign `SS_IRAM_PATH.accen_bkdr = bd1_iram_accen;
+`ifndef VERILATOR
+  defparam `SS_IRAM_PATH.RAM_BACK_DOOR_ENABLE = 1;
+`endif
   assign `SS_IRAM_PATH.cs_bkdr = bd1_iram_cs;
   assign `SS_IRAM_PATH.addr_bkdr = bd1_iram_addr;
   assign `SS_IRAM_PATH.din_bkdr = bd1_iram_din;
@@ -1164,20 +1148,13 @@ msftDvIp_periph_wrapper_v0 #(
   .dw_sck                        ( dw_sck                                   ),
   .dw_mosi                       ( dw_mosi                                  ),
   .dw_miso                       ( dw_miso                                  ),
-  .dw_oen                        ( dw_oen                                   ),
-  .mmreg_coreout_i               ( mmreg_coreout                            ),
-  .mmreg_corein_o                ( mmreg_corein                             )
+  .dw_oen                        ( dw_oen                                   )
 );
 
 
 // ==================================================
 //  Inst Pre Code 
 // ==================================================
-assign irq_fast = {12'h000, irq, fiq};
-assign irq_timer = 1'b0;
-assign irq_external = 1'b0;
-assign irq_software = 1'b0;
-assign irq_nm = 1'b0;
 
 // ==================================================
 // Instance msftDvIp_cheri_core0
@@ -1209,8 +1186,6 @@ msftDvIp_cheri_core0 msftDvIp_cheri_core0_i (
   .tsmap_cs_o                    ( tsmap_cs                                 ),
   .tsmap_addr_o                  ( tsmap_addr                               ),
   .tsmap_rdata_i                 ( tsmap_rdata                              ),
-  .mmreg_corein_i                ( mmreg_corein                             ),
-  .mmreg_coreout_o               ( mmreg_coreout                            ),
   .arid_cpu_m_o                  ( arid_cpu_m                               ),
   .araddr_cpu_m_o                ( araddr_cpu_m                             ),
   .arlen_cpu_m_o                 ( arlen_cpu_m                              ),
@@ -1259,11 +1234,7 @@ msftDvIp_cheri_core0 msftDvIp_cheri_core0_i (
   .TDI_i                         ( TDI                                      ),
   .TDO_o                         ( TDO                                      ),
   .TDOoen_o                      ( TDOoen                                   ),
-  .irq_software_i                ( irq_software                             ),
-  .irq_timer_i                   ( irq_timer                                ),
-  .irq_external_i                ( irq_external                             ),
-  .irq_nm_i                      ( irq_nm                                   ),
-  .irq_fast_i                    ( irq_fast                                 )
+  .irq_periph_i                  ( irq                                      )
 );
 
 

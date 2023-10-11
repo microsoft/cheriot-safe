@@ -1,20 +1,3 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
-
 //import ibex_pkg::*;
 
 module msftDvIp_cheri_core_wrapper import cheri_pkg::*; #(
@@ -115,11 +98,7 @@ ibex_top_tracing #(
     .DmExceptionAddr  ( DmExceptionAddr ),
     .HeapBase         ( HeapBase        ),
     .TSMapBase        ( TSMapBase       ),
-    .TSMapTop         ( TSMapTop        ),
     .TSMapSize        (2048),
-//    .Cheri32E         (1'b0),
-    .CheriPPLBC       (1'b1),
-    .CheriTBRE        (1'b1),
     .MMRegDinW        (128),
     .MMRegDoutW       (64)
 
@@ -165,6 +144,7 @@ ibex_top_tracing #(
   .tsmap_cs_o(tsmap_cs_o), 
   .tsmap_addr_o(tsmap_addr_ibexc),
   .tsmap_rdata_i(tsmap_rdata_i), 
+  .tsmap_rdata_intg_i(7'h0), 
 
   .mmreg_corein_i  (mmreg_corein_i),
   .mmreg_coreout_o (mmreg_coreout_o),
@@ -300,7 +280,7 @@ assign AR_CT3  = `CHERI_RF_PATH.rf_cap_q[28];
 assign AR_CT4  = `CHERI_RF_PATH.rf_cap_q[29];
 assign AR_CT5  = `CHERI_RF_PATH.rf_cap_q[30];
 assign AR_CT6  = `CHERI_RF_PATH.rf_cap_q[31];
-assign CPCC = `CHERI_PCC_PATH.gen_scr.pcc_cap_q;
+assign CPCC = `CHERI_PCC_PATH.pcc_cap_q;
 
 typedef struct packed {
   logic VALID;

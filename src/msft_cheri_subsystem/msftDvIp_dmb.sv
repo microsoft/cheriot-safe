@@ -1,21 +1,4 @@
 
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
-
-
 
 
 //======================================================
@@ -216,7 +199,7 @@ assign wd.strb = wstrb_dmb_s_i;
 assign awready_dmb_s_o = awstate == AW_IDLE;
 assign arready_dmb_s_o = arstate == AR_IDLE;
 
-assign aw.wreq = (awstate == AW_EXEC) && wready;
+// assign aw.wreq = (awstate == AW_EXEC) && wready;  //QQQ kliu: is this actually used?
 
 assign wready = (awstate == AW_REG) | (awstate == AW_EXEC);
 

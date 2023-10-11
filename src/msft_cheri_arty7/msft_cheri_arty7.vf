@@ -1,23 +1,6 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
-
 // Define Paths
-+define+STITCH_GIT_HEAD=8965862
-+define+STITCH_CLOCK_SECONDS=1691682833
++define+STITCH_GIT_HEAD=3735928559
++define+STITCH_CLOCK_SECONDS=1696996171
 
 // Include Paths
 
@@ -36,9 +19,10 @@ $MSFT_CHERI_ARTY7/PULLUP.v
 $MSFT_CHERI_ARTY7/PULLDOWN.v
 $MSFT_CHERI_ARTY7/msftDvIp_cheri_arty7_fpga.sv
 $MSFT_CHERI_ARTY7/BUFG.v
+$MSFT_CHERI_ARTY7/MMCME2_ADV.v
 $MSFT_CHERI_ARTY7/msftDvIp_mmcm_arty7_0.sv
 $MSFT_CHERI_ARTY7/msftDvIp_led_alive.sv
-//$MSFT_CHERI_ARTY7/msftDvIp_axi_mem_bit_write.sv
+$MSFT_CHERI_ARTY7/msftDvIp_axi_mem_bit_write.sv
 $MSFT_CHERI_ARTY7/msftDvDebug_sync_pulse_gen.sv
 $MSFT_CHERI_ARTY7/msftDvDebug_globals.sv
 $MSFT_CHERI_ARTY7/msftDvDbug_apb_mux.sv

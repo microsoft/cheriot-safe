@@ -1,20 +1,3 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
-
 (* CORE_GENERATION_INFO = "clock_generator,clk_wiz_v3_4,{component_name=clock_generator,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=MMCM_ADV,num_out_clk=6,clkin1_period=10.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=false,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=MANUAL,manual_override=false}" *)
 
 module msftDvIp_mmcm_arty7_0
@@ -51,11 +34,16 @@ module msftDvIp_mmcm_arty7_0
   wire        clkfbstopped_unused;
   wire        clkinstopped_unused;
 
+
 `ifdef XILINX_PLL_MODEL__
   // This model is to be used only for simulation when the Xilinx Simulation model is not available. 
   reg [2:0] div_clk;
   reg       clk20Mhz;
+  `ifdef VERILATOR
+  assign   clk20Mhz_o = sysClk_i;
+  `else
   assign    clk20Mhz_o = clk20Mhz;
+  `endif
 
   assign clk200Mhz_o = sysClk_i & RESETn_i;
 
@@ -192,5 +180,7 @@ module msftDvIp_mmcm_arty7_0
 //  BUFG clkout6_buf
 //   (.O   (fftClk_o),
 //    .I   (fftClk));
+
 `endif
+
 endmodule

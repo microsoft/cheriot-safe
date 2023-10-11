@@ -1,20 +1,3 @@
-
-// =====================================================
-// Copyright (c) Microsoft Corporation.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =====================================================
-
 module msftDvIp_periph_axi2apb_decode_decoder #(
   parameter APB_ADDR_WIDTH=32,
   parameter APB_DATA_WIDTH=32
@@ -35,16 +18,6 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
   output                            pwrite_sub_o,
   output [(APB_DATA_WIDTH/8)-1:0]   pstrb_sub_o,
 
-
-  output                            psel_mmreg_o,
-  output                            penable_mmreg_o,
-  output [APB_ADDR_WIDTH-1:0]       paddr_mmreg_o,
-  output [APB_DATA_WIDTH-1:0]       pwdata_mmreg_o,
-  output                            pwrite_mmreg_o,
-  output [(APB_DATA_WIDTH/8)-1:0]   pstrb_mmreg_o,
-  input [APB_DATA_WIDTH-1:0]        prdata_mmreg_i,
-  input                             pready_mmreg_i,
-  input                             psuberr_mmreg_i,
 
   output                            psel_intc_o,
   output                            penable_intc_o,
@@ -148,7 +121,6 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
 );
 
 
-  wire [APB_DATA_WIDTH-1:0]         prdata_mmreg_mux;
   wire [APB_DATA_WIDTH-1:0]         prdata_intc_mux;
   wire [APB_DATA_WIDTH-1:0]         prdata_tmr0_mux;
   wire [APB_DATA_WIDTH-1:0]         prdata_tmr1_mux;
@@ -166,12 +138,6 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
   assign pwdata_sub_o  = pwdata_mgr_i;
   assign pwrite_sub_o  = pwrite_mgr_i;
   assign pstrb_sub_o   = pstrb_mgr_i;
-
-  assign penable_mmreg_o = penable_mgr_i;
-  assign paddr_mmreg_o   = paddr_mgr_i;
-  assign pwdata_mmreg_o  = pwdata_mgr_i;
-  assign pwrite_mmreg_o  = pwrite_mgr_i;
-  assign pstrb_mmreg_o   = pstrb_mgr_i;
 
   assign penable_intc_o = penable_mgr_i;
   assign paddr_intc_o   = paddr_mgr_i;
@@ -233,7 +199,6 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
   assign pwrite_gpio1_o  = pwrite_mgr_i;
   assign pstrb_gpio1_o   = pstrb_mgr_i;
 
-  assign psel_mmreg_o = psel_mgr_i &   (paddr_mgr_i >= 32'h8f00_0000 && paddr_mgr_i < 32'h8f00_0100);
   assign psel_intc_o = psel_mgr_i &   (paddr_mgr_i >= 32'h8f00_0600 && paddr_mgr_i < 32'h8f00_0640);
   assign psel_tmr0_o = psel_mgr_i &   (paddr_mgr_i >= 32'h8f00_0800 && paddr_mgr_i < 32'h8f00_0840);
   assign psel_tmr1_o = psel_mgr_i &   (paddr_mgr_i >= 32'h8f00_0840 && paddr_mgr_i < 32'h8f00_0880);
@@ -244,9 +209,8 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
   assign psel_i2c0_o = psel_mgr_i &   (paddr_mgr_i >= 32'h8f00_d000 && paddr_mgr_i < 32'h8f00_e000);
   assign psel_gpio0_o = psel_mgr_i &   (paddr_mgr_i >= 32'h8f00_f000 && paddr_mgr_i < 32'h8f00_f800);
   assign psel_gpio1_o = psel_mgr_i &   (paddr_mgr_i >= 32'h8f00_f800 && paddr_mgr_i < 32'h8f01_0000);
-  assign psel_def_o = psel_mgr_i & ~(psel_mmreg_o | psel_intc_o | psel_tmr0_o | psel_tmr1_o | psel_dma0_o | psel_jtag_o | psel_uart0_o | psel_spi0_o | psel_i2c0_o | psel_gpio0_o | psel_gpio1_o);
+  assign psel_def_o = psel_mgr_i & ~(psel_intc_o | psel_tmr0_o | psel_tmr1_o | psel_dma0_o | psel_jtag_o | psel_uart0_o | psel_spi0_o | psel_i2c0_o | psel_gpio0_o | psel_gpio1_o);
 
-  assign prdata_mmreg_mux =  {APB_DATA_WIDTH{psel_mmreg_o}} & prdata_mmreg_i;
   assign prdata_intc_mux =  {APB_DATA_WIDTH{psel_intc_o}} & prdata_intc_i;
   assign prdata_tmr0_mux =  {APB_DATA_WIDTH{psel_tmr0_o}} & prdata_tmr0_i;
   assign prdata_tmr1_mux =  {APB_DATA_WIDTH{psel_tmr1_o}} & prdata_tmr1_i;
@@ -258,9 +222,8 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
   assign prdata_gpio0_mux =  {APB_DATA_WIDTH{psel_gpio0_o}} & prdata_gpio0_i;
   assign prdata_gpio1_mux =  {APB_DATA_WIDTH{psel_gpio1_o}} & prdata_gpio1_i;
 
-  assign prdata_mgr_o = prdata_mmreg_mux | prdata_intc_mux | prdata_tmr0_mux | prdata_tmr1_mux | prdata_dma0_mux | prdata_jtag_mux | prdata_uart0_mux | prdata_spi0_mux | prdata_i2c0_mux | prdata_gpio0_mux | prdata_gpio1_mux;
+  assign prdata_mgr_o = prdata_intc_mux | prdata_tmr0_mux | prdata_tmr1_mux | prdata_dma0_mux | prdata_jtag_mux | prdata_uart0_mux | prdata_spi0_mux | prdata_i2c0_mux | prdata_gpio0_mux | prdata_gpio1_mux;
 
-  assign pready_mmreg_mux =  psel_mmreg_o & pready_mmreg_i;
   assign pready_intc_mux =  psel_intc_o & pready_intc_i;
   assign pready_tmr0_mux =  psel_tmr0_o & pready_tmr0_i;
   assign pready_tmr1_mux =  psel_tmr1_o & pready_tmr1_i;
@@ -272,9 +235,8 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
   assign pready_gpio0_mux =  psel_gpio0_o & pready_gpio0_i;
   assign pready_gpio1_mux =  psel_gpio1_o & pready_gpio1_i;
 
-  assign pready_mgr_o = pready_mmreg_mux | pready_intc_mux | pready_tmr0_mux | pready_tmr1_mux | pready_dma0_mux | pready_jtag_mux | pready_uart0_mux | pready_spi0_mux | pready_i2c0_mux | pready_gpio0_mux | pready_gpio1_mux | psel_def_o;
+  assign pready_mgr_o = pready_intc_mux | pready_tmr0_mux | pready_tmr1_mux | pready_dma0_mux | pready_jtag_mux | pready_uart0_mux | pready_spi0_mux | pready_i2c0_mux | pready_gpio0_mux | pready_gpio1_mux | psel_def_o;
 
-  assign psuberr_mmreg_mux =  psel_mmreg_o & psuberr_mmreg_i;
   assign psuberr_intc_mux =  psel_intc_o & psuberr_intc_i;
   assign psuberr_tmr0_mux =  psel_tmr0_o & psuberr_tmr0_i;
   assign psuberr_tmr1_mux =  psel_tmr1_o & psuberr_tmr1_i;
@@ -286,7 +248,7 @@ module msftDvIp_periph_axi2apb_decode_decoder #(
   assign psuberr_gpio0_mux =  psel_gpio0_o & psuberr_gpio0_i;
   assign psuberr_gpio1_mux =  psel_gpio1_o & psuberr_gpio1_i;
 
-  assign psuberr_mgr_o = psuberr_mmreg_mux | psuberr_intc_mux | psuberr_tmr0_mux | psuberr_tmr1_mux | psuberr_dma0_mux | psuberr_jtag_mux | psuberr_uart0_mux | psuberr_spi0_mux | psuberr_i2c0_mux | psuberr_gpio0_mux | psuberr_gpio1_mux | psel_def_o;
+  assign psuberr_mgr_o = psuberr_intc_mux | psuberr_tmr0_mux | psuberr_tmr1_mux | psuberr_dma0_mux | psuberr_jtag_mux | psuberr_uart0_mux | psuberr_spi0_mux | psuberr_i2c0_mux | psuberr_gpio0_mux | psuberr_gpio1_mux | psel_def_o;
 
 
 endmodule
