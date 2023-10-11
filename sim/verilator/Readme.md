@@ -48,5 +48,6 @@ Note, CPU boot address remains at 0x2000_0080.
      35 00000000
 
 First instructions executed after boot:
-        3505000          5      20000080        00080297        CH.auipcc       c5, 0x80          x5=0x20040080+0x15e3e0000
-        3555000          6      20000084        000282e7        CH.cjalr        c5,0(c5)          x5:0x20040080+0x15e3e0000  x5=0x20000088+0x15ebe0000
+
+  3505000          5      20000080        00080297        CH.auipcc       c5, 0x80          x5=0x20040080+0x15e3e0000       
+  3555000          6      20000084        000282e7        CH.cjalr        c5,0(c5)          x5:0x20040080+0x15e3e0000  x5=0x20000088+0x15ebe0000
