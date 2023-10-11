@@ -9,7 +9,7 @@ The verilog wrapper (swci_vtb) takes care of printing out UART messages.
 
 To enable ibex traces, insert a "+define+RVFI=1" in all.f (above line 11).
 
-This simulation setup looks for 2 hex images, ./firmware/cpu0_irom.hex and ./firmware/cpu0_iram.hex. 
+This simulation setup looks for 2 hex images, ./firmware/cpu0_irom.hex and ./firmware/cpu0_iram.hex (see ./examples/cheri_sanity). 
 IROM is read-only and limited in size, so best just jump to iram right away after booting. The following example of cpu0_irom.hex jumps to 20040080. 
 Note, CPU boot address remains at 0x2000_0080.
 
