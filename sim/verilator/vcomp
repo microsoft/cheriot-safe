@@ -1,0 +1,2 @@
+#make -j -C obj_dir -f VmsftDvIp_cheri_arty7_fpga.mk VmsftDvIp_cheri_arty7_fpga
+make -j -C obj_dir -f Vswci_vtb.mk Vswci_vtb
