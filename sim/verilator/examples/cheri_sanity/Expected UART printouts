@@ -1,0 +1,11 @@
+Reading firmware/cpu0_irom.vhx
+%Warning: firmware/cpu0_irom.vhx:35: $readmem file ended before specified final address (IEEE 2017 21.4)
+%Warning: firmware/cpu0_iram.vhx:16384: $readmem file ended before specified final address (IEEE 2017 21.4)
+ Cheri sanity test starting..
+Setting up ISR and PLIC
+Testing sw interrupts
+Testing timer interrupts
+calling cheriot tsafe test
+Testing tbre with interrupts 
+Testing stkclr 
+Test passed :-) 
