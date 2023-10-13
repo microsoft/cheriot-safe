@@ -1,6 +1,6 @@
 // Define Paths
 +define+STITCH_GIT_HEAD=3735928559
-+define+STITCH_CLOCK_SECONDS=1696996171
++define+STITCH_CLOCK_SECONDS=1697228121
 
 // Include Paths
 +incdir+/home/kunyanliu/riscdev/new_fpga/dvip/tools/stitch/verilog
@@ -22,6 +22,7 @@ $MSFT_CHERI_SUBSYSTEM/msftDvIp_riscv_memory_v0.sv
 $MSFT_CHERI_SUBSYSTEM/msftDvIp_dmb_fifo.sv
 $MSFT_CHERI_SUBSYSTEM/msftDvIp_dmb.sv
 $MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_mem_bit_write.sv
+$MSFT_CHERI_SUBSYSTEM/msftDvIp_tcdev_wrapper.sv
 $MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_mgr_ifc.sv
 $MSFT_CHERI_SUBSYSTEM/msftDvIp_axi_fifo.sv
 $MSFT_CHERI_SUBSYSTEM/msftDvIp_msftDvIp_cheri_axi_fabric_addr_decode.sv
@@ -54,3 +55,6 @@ $MSFT_CHERI_SUBSYSTEM/msftDvIp_dma_engine.sv
 $MSFT_CHERI_SUBSYSTEM/msftDvIp_dma_ctrl0.sv
 
 // Lib RTL Files
+$MSFT_DVIP_HOME/dvip/ip/Tcdev/verilog/msftDvIp_plic.sv
+$MSFT_DVIP_HOME/dvip/ip/Tcdev/verilog/msftDvIp_mmreg.sv
+$MSFT_DVIP_HOME/dvip/ip/Tcdev/verilog/msftDvIp_clint_tmr.sv

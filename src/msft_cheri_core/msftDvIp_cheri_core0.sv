@@ -35,6 +35,18 @@ module msftDvIp_cheri_core0 #(
   input  [DATA_WIDTH-1:0]                    DRAM_RDATA_i,
   input                                      DRAM_READY_i,
   input                                      DRAM_ERROR_i,
+  output                                     TCDEV_EN_o,
+  output [31:0]                              TCDEV_ADDR_o,
+  output [DATA_WIDTH-1:0]                    TCDEV_WDATA_o,
+  output                                     TCDEV_WE_o,
+  output [3:0]                               TCDEV_BE_o,
+  input  [DATA_WIDTH-1:0]                    TCDEV_RDATA_i,
+  input                                      TCDEV_READY_i,
+  input  [127:0]                             mmreg_corein_i,
+  output [63:0]                              mmreg_coreout_o,
+  input                                      irq_software_i,
+  input                                      irq_timer_i,
+  input                                      irq_external_i,
   output                                     tsmap_cs_o,
   output [15:0]                              tsmap_addr_o,
   input  [DATA_WIDTH-1:0]                    tsmap_rdata_i,
@@ -115,6 +127,18 @@ wire [3:0]                               DRAM_BE;
 wire [DATA_WIDTH-1:0]                    DRAM_RDATA;
 wire                                     DRAM_READY;
 wire                                     DRAM_ERROR;
+wire                                     TCDEV_EN;
+wire [31:0]                              TCDEV_ADDR;
+wire [DATA_WIDTH-1:0]                    TCDEV_WDATA;
+wire                                     TCDEV_WE;
+wire [3:0]                               TCDEV_BE;
+wire [DATA_WIDTH-1:0]                    TCDEV_RDATA;
+wire                                     TCDEV_READY;
+wire [127:0]                             mmreg_corein;
+wire [63:0]                              mmreg_coreout;
+wire                                     irq_software;
+wire                                     irq_timer;
+wire                                     irq_external;
 wire                                     tsmap_cs;
 wire [15:0]                              tsmap_addr;
 wire [DATA_WIDTH-1:0]                    tsmap_rdata;
@@ -189,11 +213,6 @@ wire [31:0]                              data_addr;
 wire [32:0]                              data_wdata;
 wire [6:0]                               data_wdata_intg;
 wire [32:0]                              data_rdata;
-wire [127:0]                             mmreg_corein;
-wire [63:0]                              mmreg_coreout;
-wire                                     irq_software;
-wire                                     irq_timer;
-wire                                     irq_external;
 wire                                     scramble_req;
 wire                                     debug_req;
 wire                                     double_fault_seen;
@@ -229,20 +248,9 @@ wire                                     DBGMEM_ERROR;
 // ==================================================
 wire                                     data_error;
 wire                                     instr_error;
-wire                                     TCDEV_EN;
-wire [31:0]                              TCDEV_ADDR;
-wire [32:0]                              TCDEV_WDATA;
-wire                                     TCDEV_WE;
-wire [3:0]                               TCDEV_BE;
-wire [32:0]                              TCDEV_RDATA;
-wire                                     TCDEV_READY;
 wire [32:0]                              IROM_WDATA;
 wire                                     IROM_WE;
 wire [3:0]                               IROM_BE;
-
-// ==================================================
-// Instance msftDvIp_tcdev_wrapper wire definitions
-// ==================================================
 
 // ==================================================
 // Unconnected Pins
@@ -466,31 +474,6 @@ msftDvIp_obimux3w0 #(
 
 
 // ==================================================
-//  Inst Pre Code 
-// ==================================================
-
-// ==================================================
-// Instance msftDvIp_tcdev_wrapper
-// ==================================================
-msftDvIp_tcdev_wrapper msftDvIp_tcdev_wrapper_i (
-  .clk_i                         ( clk                                      ),
-  .rstn_i                        ( rstn                                     ),
-  .reg_en_i                      ( TCDEV_EN                                 ),
-  .reg_addr_i                    ( TCDEV_ADDR                               ),
-  .reg_wdata_i                   ( TCDEV_WDATA                              ),
-  .reg_we_i                      ( TCDEV_WE                                 ),
-  .reg_rdata_o                   ( TCDEV_RDATA                              ),
-  .reg_ready_o                   ( TCDEV_READY                              ),
-  .mmreg_coreout_i               ( mmreg_coreout                            ),
-  .mmreg_corein_o                ( mmreg_corein                             ),
-  .irq_periph_i                  ( irq_periph                               ),
-  .irq_external_o                ( irq_external                             ),
-  .irq_software_o                ( irq_software                             ),
-  .irq_timer_o                   ( irq_timer                                )
-);
-
-
-// ==================================================
 //  Connect IO Pins
 // ==================================================
 assign clk = clk_i;
@@ -516,6 +499,18 @@ assign DRAM_BE_o = DRAM_BE;
 assign DRAM_RDATA = DRAM_RDATA_i;
 assign DRAM_READY = DRAM_READY_i;
 assign DRAM_ERROR = DRAM_ERROR_i;
+assign TCDEV_EN_o = TCDEV_EN;
+assign TCDEV_ADDR_o = TCDEV_ADDR;
+assign TCDEV_WDATA_o = TCDEV_WDATA;
+assign TCDEV_WE_o = TCDEV_WE;
+assign TCDEV_BE_o = TCDEV_BE;
+assign TCDEV_RDATA = TCDEV_RDATA_i;
+assign TCDEV_READY = TCDEV_READY_i;
+assign mmreg_corein = mmreg_corein_i;
+assign mmreg_coreout_o = mmreg_coreout;
+assign irq_software = irq_software_i;
+assign irq_timer = irq_timer_i;
+assign irq_external = irq_external_i;
 assign tsmap_cs_o = tsmap_cs;
 assign tsmap_addr_o = tsmap_addr;
 assign tsmap_rdata = tsmap_rdata_i;

@@ -164,8 +164,6 @@ wire                                     i2c0_scl_oe;
 wire                                     i2c0_sda_oe;
 wire                                     i2c0_scl_in;
 wire                                     i2c0_sda_in;
-wire [127:0]                             mmreg_corein;
-wire [63:0]                              mmreg_coreout;
 
 // ==================================================
 // Instance external_ram wire definitions
@@ -364,9 +362,7 @@ msftDvIp_cheri0_subsystem #(
   .i2c0_scl_in                   ( i2c0_scl_in                              ),
   .i2c0_sda_in                   ( i2c0_sda_in                              ),
   .i2c0_scl_pu_en                ( i2c0_scl_pu_en                           ),
-  .i2c0_sda_pu_en                ( i2c0_sda_pu_en                           ),
-  .mmreg_corein_i                ( mmreg_corein                             ),
-  .mmreg_coreout_o               ( mmreg_coreout                            )
+  .i2c0_sda_pu_en                ( i2c0_sda_pu_en                           )
 );
 
 

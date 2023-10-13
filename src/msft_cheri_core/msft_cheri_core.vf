@@ -1,7 +1,7 @@
 // Define Paths
 +define+RVFI=1
 +define+STITCH_GIT_HEAD=3735928559
-+define+STITCH_CLOCK_SECONDS=1696996170
++define+STITCH_CLOCK_SECONDS=1697228121
 
 // Include Paths
 
@@ -23,7 +23,6 @@ $CHERIOT_RTL_DIR/ibex_tracer_pkg.sv
 $MSFT_CHERI_CORE/msftDvIp_cheri_core0.sv
 $MSFT_CHERI_CORE/msftDvIp_cheri_core_wrapper.sv
 $MSFT_CHERI_CORE/msftDvIp_obimux3w0.sv
-$MSFT_CHERI_CORE/msftDvIp_tcdev_wrapper.sv
 $MSFT_CHERI_CORE/msftDvIp_riscv_cheri_debug.sv
 $MSFT_CHERI_CORE/msftDvIp_riscv_cheri_dmibus.sv
 $MSFT_CHERI_CORE/msftDvIp_riscv_cheri_mem.sv
@@ -62,6 +61,3 @@ $CHERIOT_RTL_DIR/ibex_tracer.sv
 $CHERIOT_RTL_DIR/ibex_wb_stage.sv
 $CHERIOT_RTL_DIR/ibexc_top.sv
 $CHERIOT_RTL_DIR/ibexc_top_tracing.sv
-$MSFT_DVIP_HOME/dvip/ip/Tcdev/verilog/msftDvIp_plic.sv
-$MSFT_DVIP_HOME/dvip/ip/Tcdev/verilog/msftDvIp_mmreg.sv
-$MSFT_DVIP_HOME/dvip/ip/Tcdev/verilog/msftDvIp_clint_tmr.sv

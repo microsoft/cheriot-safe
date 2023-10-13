@@ -114,9 +114,7 @@ module msftDvIp_cheri0_subsystem #(
   input                                      i2c0_scl_in,
   input                                      i2c0_sda_in,
   output                                     i2c0_scl_pu_en,
-  output                                     i2c0_sda_pu_en,
-  input  [127:0]                             mmreg_corein_i,
-  output [63:0]                              mmreg_coreout_o
+  output                                     i2c0_sda_pu_en
 );
 
 // ==================================================
@@ -205,8 +203,6 @@ wire                                     pwrite_bkd;
 wire [47:0]                              prdata_bkd;
 wire                                     pready_bkd;
 wire                                     psuberr_bkd;
-wire [127:0]                             mmreg_corein;
-wire [63:0]                              mmreg_coreout;
 
 // ==================================================
 // Pre Code Insertion
@@ -528,10 +524,27 @@ wire [3:0]                               dw_oen;
 // ==================================================
 // Instance msftDvIp_cheri_core0 wire definitions
 // ==================================================
+wire                                     TCDEV_EN;
+wire [31:0]                              TCDEV_ADDR;
+wire [33-1:0]                            TCDEV_WDATA;
+wire                                     TCDEV_WE;
+wire [3:0]                               TCDEV_BE;
+wire [33-1:0]                            TCDEV_RDATA;
+wire                                     TCDEV_READY;
+wire [127:0]                             mmreg_corein;
+wire [63:0]                              mmreg_coreout;
+wire                                     irq_software;
+wire                                     irq_timer;
+wire                                     irq_external;
 
 // ==================================================
 // Instance shared_ram wire definitions
 // ==================================================
+
+// ==================================================
+// Instance msftDvIp_tcdev_wrapper wire definitions
+// ==================================================
+wire                                     irq_periph;
 
 // ==================================================
 // Unconnected Pins
@@ -1183,6 +1196,18 @@ msftDvIp_cheri_core0 msftDvIp_cheri_core0_i (
   .DRAM_RDATA_i                  ( DRAM_RDATA                               ),
   .DRAM_READY_i                  ( DRAM_READY                               ),
   .DRAM_ERROR_i                  ( DRAM_ERROR                               ),
+  .TCDEV_EN_o                    ( TCDEV_EN                                 ),
+  .TCDEV_ADDR_o                  ( TCDEV_ADDR                               ),
+  .TCDEV_WDATA_o                 ( TCDEV_WDATA                              ),
+  .TCDEV_WE_o                    ( TCDEV_WE                                 ),
+  .TCDEV_BE_o                    ( TCDEV_BE                                 ),
+  .TCDEV_RDATA_i                 ( TCDEV_RDATA                              ),
+  .TCDEV_READY_i                 ( TCDEV_READY                              ),
+  .mmreg_corein_i                ( mmreg_corein                             ),
+  .mmreg_coreout_o               ( mmreg_coreout                            ),
+  .irq_software_i                ( irq_software                             ),
+  .irq_timer_i                   ( irq_timer                                ),
+  .irq_external_i                ( irq_external                             ),
   .tsmap_cs_o                    ( tsmap_cs                                 ),
   .tsmap_addr_o                  ( tsmap_addr                               ),
   .tsmap_rdata_i                 ( tsmap_rdata                              ),
@@ -1296,6 +1321,31 @@ msftDvIp_axi_mem_bit_write #(
 
 
 // ==================================================
+//  Inst Pre Code 
+// ==================================================
+
+// ==================================================
+// Instance msftDvIp_tcdev_wrapper
+// ==================================================
+msftDvIp_tcdev_wrapper msftDvIp_tcdev_wrapper_i (
+  .clk_i                         ( clk                                      ),
+  .rstn_i                        ( rstn                                     ),
+  .reg_en_i                      ( TCDEV_EN                                 ),
+  .reg_addr_i                    ( TCDEV_ADDR                               ),
+  .reg_wdata_i                   ( TCDEV_WDATA                              ),
+  .reg_we_i                      ( TCDEV_WE                                 ),
+  .reg_rdata_o                   ( TCDEV_RDATA                              ),
+  .reg_ready_o                   ( TCDEV_READY                              ),
+  .mmreg_coreout_i               ( mmreg_coreout                            ),
+  .mmreg_corein_o                ( mmreg_corein                             ),
+  .irq_periph_i                  ( irq_periph                               ),
+  .irq_external_o                ( irq_external                             ),
+  .irq_software_o                ( irq_software                             ),
+  .irq_timer_o                   ( irq_timer                                )
+);
+
+
+// ==================================================
 //  Connect IO Pins
 // ==================================================
 assign clk = clk_i;
@@ -1387,8 +1437,6 @@ assign psuberr_bkd_o = psuberr_bkd;
 
 
 
-assign mmreg_corein = mmreg_corein_i;
-assign mmreg_coreout_o = mmreg_coreout;
 
 endmodule
 

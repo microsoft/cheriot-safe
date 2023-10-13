@@ -55,12 +55,12 @@ $DesignRoot/src/msft_cheri_core/msftDvIp_riscv_cheri_debug_rom.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_riscv_cheri_debug.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_riscv_cheri_dmibus.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_riscv_cheri_mem.sv
-$DesignRoot/src/msft_cheri_core/msftDvIp_tcdev_wrapper.sv
+$DesignRoot/src/msft_cheri_core/msftDvIp_cheri_core_wrapper.sv
+$DesignRoot/src/msft_cheri_core/msftDvIp_cheri_core0.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_mmreg.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_plic.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_clint_tmr.sv
-$DesignRoot/src/msft_cheri_core/msftDvIp_cheri_core_wrapper.sv
-$DesignRoot/src/msft_cheri_core/msftDvIp_cheri_core0.sv
+$DesignRoot/src/msft_cheri_subsystem/msftDvIp_tcdev_wrapper.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_axi_fifo.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_axi_mem_bit_write.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_axi_mgr_ifc.sv
