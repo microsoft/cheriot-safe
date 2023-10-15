@@ -15,8 +15,9 @@
 // =====================================================
 
 module swci_vtb (
-  input logic       sysclk_i,
-  input logic       rstn_i
+  input  logic       sysclk_i,
+  input  logic       rstn_i,
+  output logic [7:0] sim_flag
 );
 
 msftDvIp_cheri_arty7_fpga dut (
@@ -51,8 +52,12 @@ msftDvIp_cheri_arty7_fpga dut (
 
   assign uart_tx_fifo_wr = dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.msftDvIp_uart_tx_fifo_i.wr_i;
   assign uart_tx_fifo_wdata = dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.msftDvIp_uart_tx_fifo_i.wdata_i;
+
+  assign sim_flag = uart_tx_fifo_wr ? uart_tx_fifo_wdata : 8'h0;
+
   always @(posedge sysclk_i) begin
     if (uart_tx_fifo_wr) $write("%c", uart_tx_fifo_wdata);
   end
+
 
 endmodule

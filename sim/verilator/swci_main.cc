@@ -5,10 +5,12 @@
 #include "Vswci_vtb.h"
 #include "Vswci_vtb___024root.h"
 
-#define MAX_SIM_TIME 2000000
+#define MAX_SIM_TIME 2000000000        // 100M cycles
 vluint64_t sim_time = 0;
 
 int main(int argc, char** argv, char** env) {
+    unsigned char exit_flag, exit_code;
+
     Verilated::commandArgs(argc, argv);
     //VmsftDvIp_cheri_arty7_fpga *dut = new VmsftDvIp_cheri_arty7_fpga;
     Vswci_vtb *dut = new Vswci_vtb;
@@ -33,10 +35,18 @@ int main(int argc, char** argv, char** env) {
    // dut->TDO_io = 0;
    // dut->rxd_dvp_i = 0;
 
-    while (sim_time < MAX_SIM_TIME) {
+    exit_flag = 0;
+    exit_code = 0xfe;
+
+    while (sim_time < MAX_SIM_TIME && (exit_flag==0)) {
     // while (!Verilated::gotFinish()) {
         dut->sysclk_i ^= 1;
         dut->eval();
+
+        exit_code = dut->sim_flag;
+        exit_flag = (exit_code & 0x80);
+        exit_code = exit_code & 0x7f;
+
 #ifdef VCD_TRACE
         m_trace->dump(sim_time);
 #endif
@@ -52,5 +62,7 @@ int main(int argc, char** argv, char** env) {
     m_trace->close();
 #endif
     delete dut;
-    exit(EXIT_SUCCESS);
+
+    printf ("swci_main exiting with return code %02x\n", exit_code);
+    exit(exit_code);
 }
