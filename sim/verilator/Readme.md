@@ -7,7 +7,7 @@ Steps to run a verilog simulation:
 You can run the scripts from any where as long as the $DesignRoot in vgen script points to the right locaiton of verilog files. 
 
 The verilog wrapper (swci_vtb) takes care of printing out UART messages. 
-To stop simulation, write any value >= 0x80 to UART (0x8f00b000). The C++ wrapper (swci_main) exits value is the lower 7-bit of the byte written to UART. There is also a timeout (defined MAX_SIM_TIME in swci_main.cc) which defaults to 100M cycles, the exit code for timeout is 0xfe. 
+To stop simulation, write any value >= 0x80 to UART (0x8f00b000). The C++ wrapper (swci_main) exit value is the lower 7-bit of the byte written to UART. There is also a timeout (defined MAX_SIM_TIME in swci_main.cc) which defaults to 100M cycles, the exit code for timeout is 0xfe. 
 
 To enable ibex traces, insert a "+define+RVFI=1" in all.f (above line 11).
 
