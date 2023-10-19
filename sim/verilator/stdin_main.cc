@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <iostream>
+#include <termios.h>
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 #include "Vswci_vtb.h"
@@ -44,6 +45,25 @@ int main(int argc, char** argv, char** env) {
     exit_flag = 0;
     exit_code = 0xfe;
 
+    // Make stdin non-blocking
+    fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL) | O_NONBLOCK);
+
+    // Make stdin unbuffered if it's a terminal.
+    // If getting the attributes fails, assume it's not a TTY
+    static struct termios initial_tios;
+
+    if (tcgetattr(STDIN_FILENO, &initial_tios) == 0)
+    {
+        struct termios tios = initial_tios;
+        // Disable local echo and line buffering
+        tios.c_lflag &= ~(ECHO | ICANON);
+        tcsetattr(STDIN_FILENO, TCSANOW, &tios);
+        // Reset the terminal settings at exit.
+        atexit([]() {
+            tcsetattr(STDIN_FILENO, TCSANOW, &initial_tios);
+        });
+    }
+
     while (sim_time < MAX_SIM_TIME && (exit_flag==0)) {
     // while (!Verilated::gotFinish()) {
         dut->sysclk_i ^= 1;
@@ -56,8 +76,7 @@ int main(int argc, char** argv, char** env) {
         dut->uart_rx_wr_i = 0;
         dut->uart_rx_data_i = 0;
         if ((dut->uart_rx_full_o == 0) && dut->sysclk_i) {
-          fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
-          if (read (0, din, 1) > 0) {
+          if (read(STDIN_FILENO, din, 1) > 0) {
             dut->uart_rx_wr_i = 1;
             dut->uart_rx_data_i = din[0];
             // printf("-------time = %d, din=%c\n", sim_time, din[0]);
