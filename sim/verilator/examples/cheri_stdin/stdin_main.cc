@@ -12,6 +12,7 @@ vluint64_t sim_time = 0;
 
 int main(int argc, char** argv, char** env) {
     unsigned char exit_flag, exit_code;
+    unsigned char din[4];
 
     Verilated::commandArgs(argc, argv);
     Vswci_vtb *dut = new Vswci_vtb;
@@ -51,6 +52,17 @@ int main(int argc, char** argv, char** env) {
         exit_code = dut->uart_tx_data_o;
         exit_flag = (exit_code & 0x80);
         exit_code = exit_code & 0x7f;
+
+        dut->uart_rx_wr_i = 0;
+        dut->uart_rx_data_i = 0;
+        if ((dut->uart_rx_full_o == 0) && dut->sysclk_i) {
+          fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+          if (read (0, din, 1) > 0) {
+            dut->uart_rx_wr_i = 1;
+            dut->uart_rx_data_i = din[0];
+            // printf("-------time = %d, din=%c\n", sim_time, din[0]);
+          }
+        }
 
 #ifdef VCD_TRACE
         m_trace->dump(sim_time);

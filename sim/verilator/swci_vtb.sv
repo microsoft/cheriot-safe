@@ -17,7 +17,11 @@
 module swci_vtb (
   input  logic       sysclk_i,
   input  logic       rstn_i,
-  output logic [7:0] sim_flag
+  output logic       uart_tx_wr_o,
+  output logic [7:0] uart_tx_data_o,
+  input  logic       uart_rx_wr_i,
+  input  logic       uart_rx_data_i,
+  output logic       uart_rx_full_o
 );
 
 msftDvIp_cheri_arty7_fpga dut (
@@ -35,7 +39,7 @@ msftDvIp_cheri_arty7_fpga dut (
   .alive_o        (),
   .TRSTn_mux_o    (),
   .txd_dvp_o      (),
-  .rxd_dvp_i      (1'b0),
+  .rxd_dvp_i      (1'b1),
   .i2c0_scl_io    (),
   .i2c0_sda_io    (),
   .i2c0_scl_pu_en_o(),
@@ -47,17 +51,29 @@ msftDvIp_cheri_arty7_fpga dut (
   .PMODD_io        ()
 );
 
+
   logic       uart_tx_fifo_wr;
   logic [7:0] uart_tx_fifo_wdata;
 
   assign uart_tx_fifo_wr = dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.msftDvIp_uart_tx_fifo_i.wr_i;
   assign uart_tx_fifo_wdata = dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.msftDvIp_uart_tx_fifo_i.wdata_i;
 
-  assign sim_flag = uart_tx_fifo_wr ? uart_tx_fifo_wdata : 8'h0;
+  assign uart_tx_data_o = uart_tx_fifo_wr ? uart_tx_fifo_wdata : 8'h0;
+  assign uart_tx_wr_o   = uart_tx_fifo_wr;
+
+  assign uart_rx_full_o = dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.msftDvIp_uart_rx_fifo_i.full_o;
 
   always @(posedge sysclk_i) begin
     if (uart_tx_fifo_wr) $write("%c", uart_tx_fifo_wdata);
   end
 
+  always @(negedge sysclk_i) begin
+    if (uart_rx_wr_i && ~uart_rx_full_o) begin
+      force dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.rx_fwr = 1'b1;
+      force dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.rx_fwdata = uart_rx_data_i;
+    end else begin
+      force dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.rx_fwr = 1'b0;
+    end
+  end
 
 endmodule
