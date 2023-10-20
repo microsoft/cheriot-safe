@@ -400,3 +400,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+*.jou
+build/RUN*/*
+
