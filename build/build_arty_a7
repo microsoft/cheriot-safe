@@ -5,5 +5,5 @@ mkdir $NETLISTDIR
 
 rm -f build.passed
 
-vnc run  -Ir -wl -r vivado RAM/64000 x86_64 redhat7 --  vivado -mode batch -source cheri_fpga.tcl -log $NETLISTDIR/vivado.log -tclargs $DESIGNROOT $NETLISTDIR ./read_design.tcl ./arty-cheri-a7-100.xdc
+vivado -mode batch -source cheri_fpga.tcl -log $NETLISTDIR/vivado.log -tclargs $DESIGNROOT $NETLISTDIR ./read_design.tcl ./arty-cheri-a7-100.xdc
 
