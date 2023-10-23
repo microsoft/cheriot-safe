@@ -1,0 +1,352 @@
+
+hello_world.elf:	file format elf32-littleriscv
+architecture: riscv32
+start address: 0x20040080
+
+Program Header:
+    LOAD off    0x00001000 vaddr 0x20040000 paddr 0x20040000 align 2**12
+         filesz 0x000003f2 memsz 0x000003f2 flags r-x
+    LOAD off    0x00002000 vaddr 0x20042000 paddr 0x20042000 align 2**12
+         filesz 0x00000000 memsz 0x00000038 flags rw-
+   STACK off    0x00000000 vaddr 0x00000000 paddr 0x00000000 align 2**64
+         filesz 0x00000000 memsz 0x00000000 flags rw-
+
+Dynamic Section:
+
+Sections:
+Idx Name              Size     VMA      Type
+  0                   00000000 00000000 
+  1 .pcc              000003f2 20040000 TEXT
+  2 .cgp              00000038 20042000 BSS
+  3 __cap_relocs      00000000 20042038 DATA
+  4 .comment          000000e7 00000000 
+  5 .riscv.attributes 00000030 00000000 
+  6 .symtab           000002a0 00000000 
+  7 .shstrtab         0000004d 00000000 
+  8 .strtab           00000187 00000000 
+
+SYMBOL TABLE:
+00000000 l    df *ABS*	00000000 hello_world.c
+20040206 l       .pcc	00000000 .LBB0_2
+20040216 l       .pcc	00000000 .LBB0_1
+00000000 l    df *ABS*	00000000 cstart.c
+200402a6 l       .pcc	00000000 .LBB1_5
+2004024a l       .pcc	00000000 .LBB1_1
+2004026e l       .pcc	00000000 .LBB1_3
+20040272 l       .pcc	00000000 .LBB1_4
+20040340 l       .pcc	00000000 .LBB2_1
+00000000 l    df *ABS*	00000000 util.c
+2004034e l       .pcc	00000000 .LBB0_1
+2004039a l       .pcc	00000000 .LBB3_1
+200403b2 l       .pcc	00000000 .LBB3_4
+20040094 l       .pcc	00000000 .Ltmp0
+20040108 l       .pcc	00000000 cont1
+20040110 l       .pcc	00000000 w3
+20042000 l       .cgp	00000000 .hidden __cgp_start
+20042038 l       .cgp	00000000 .hidden __cgp_end
+20040000 l       .pcc	00000000 .hidden __pcc_start
+200403f2 l       .pcc	00000000 .hidden __pcc_end
+20040200 g     F .pcc	00000024 mymain
+2004038c g     F .pcc	00000030 uart_prints
+200403bc g     F .pcc	00000018 read_mtime
+200403d4 g     F .pcc	00000010 gpio_out
+20040224 g     F .pcc	00000010 from_root
+20042000 g     O .cgp	00000008 globalRoot
+20040234 g     F .pcc	0000007a populate_caprelocs
+200402ae g     F .pcc	00000094 cstart
+20042008 g     O .cgp	00000008 iromBase
+20042010 g     O .cgp	00000008 iramBase
+20042018 g     O .cgp	00000008 dramBase
+20042020 g     O .cgp	00000008 uartRegBase
+20042028 g     O .cgp	00000008 mtimeRegBase
+20042030 g     O .cgp	00000008 gpio0RegBase
+2004035a g     F .pcc	0000002c uart_init
+20040386 g     F .pcc	00000006 stop_sim
+20040344 g     F .pcc	00000016 uart_send_char
+20040080 g       .pcc	00000000 _start
+20040120 g       .pcc	00000000 mtvec
+20042038 g       __cap_relocs	00000000 __cap_relocs
+20042038 g       __cap_relocs	00000000 __cap_relocs_end
+
+Disassembly of section .pcc:
+
+20040000 <__pcc_start>:
+		...
+
+20040080 <_start>:
+20040080: db 01 d0 03  	cspecialr	cgp, mtdc
+20040084: b7 05 08 20  	lui	a1, 131200
+20040088: 93 85 05 f0  	addi	a1, a1, -256
+2004008c: 5b 81 b1 20  	csetaddr	csp, cgp, a1
+20040090: db 02 c0 03  	cspecialr	ct0, mtcc
+
+20040094 <.Ltmp0>:
+20040094: 17 03 00 00  	auipcc	ct1, 0
+20040098: 5b 13 c3 08  	cincoffset	ct1, ct1, 140
+2004009c: db 82 62 20  	csetaddr	ct0, ct0, t1
+200400a0: 5b 80 c2 03  	cspecialw	mtcc, ct0
+200400a4: 93 02 80 08  	addi	t0, zero, 136
+200400a8: 73 a0 02 30  	csrs	mstatus, t0
+200400ac: 89 62        	lui	t0, 2
+200400ae: 93 82 02 80  	addi	t0, t0, -2048
+200400b2: 73 b0 02 30  	csrc	mstatus, t0
+200400b6: 5b 05 d0 03  	cspecialr	ca0, mtdc
+200400ba: b7 25 04 20  	lui	a1, 131138
+200400be: 93 85 05 00  	mv	a1, a1
+200400c2: 37 26 04 20  	lui	a2, 131138
+200400c6: 13 06 86 03  	addi	a2, a2, 56
+200400ca: 0d 8e        	sub	a2, a2, a1
+200400cc: db 02 b5 20  	csetaddr	ct0, ca0, a1
+200400d0: db 82 c2 10  	csetbounds	ct0, ct0, a2
+200400d4: 05 82        	srli	a2, a2, 1
+200400d6: db 81 c2 22  	cincoffset	cgp, ct0, a2
+200400da: 37 26 04 20  	lui	a2, 131138
+200400de: 13 06 86 03  	addi	a2, a2, 56
+200400e2: db 05 c5 20  	csetaddr	ca1, ca0, a2
+200400e6: b7 26 04 20  	lui	a3, 131138
+200400ea: 93 86 86 03  	addi	a3, a3, 56
+200400ee: 33 86 c6 40  	sub	a2, a3, a2
+200400f2: d1 46        	addi	a3, zero, 20
+200400f4: 33 56 d6 02  	divu	a2, a2, a3
+200400f8: 01 00        	nop
+200400fa: 01 00        	nop
+200400fc: 01 00        	nop
+200400fe: 01 00        	nop
+20040100: 01 00        	nop
+20040102: 01 00        	nop
+20040104: 01 00        	nop
+20040106: 01 00        	nop
+
+20040108 <cont1>:
+20040108: 01 00        	nop
+2004010a: 01 00        	nop
+2004010c: 01 00        	nop
+2004010e: 45 22        	cjal	0x200402ae <cstart>
+
+20040110 <w3>:
+20040110: 01 a0        	j	0x20040110 <w3>
+20040112: 13 00 00 00  	nop
+20040116: 13 00 00 00  	nop
+2004011a: 13 00 00 00  	nop
+2004011e: 01 00        	nop
+
+20040120 <mtvec>:
+20040120: 5b 11 81 ff  	cincoffset	csp, csp, -8
+20040124: 06 e0        	csc	cra, 0(csp)
+20040126: 82 60        	clc	cra, 0(csp)
+20040128: 5b 11 81 00  	cincoffset	csp, csp, 8
+2004012c: 73 00 20 30  	mret	
+		...
+
+20040200 <mymain>:
+20040200: 7d 71        	cincoffset	csp, csp, -16
+20040202: 06 e4        	csc	cra, 8(csp)
+20040204: 22 e0        	csc	cs0, 0(csp)
+
+20040206 <.LBB0_2>:
+20040206: 17 05 00 00  	auipcc	ca0, 0
+2004020a: 5b 15 e5 1d  	cincoffset	ca0, ca0, 478
+2004020e: 5b 25 e5 00  	csetbounds	ca0, ca0, 14
+20040212: ad 2a        	cjal	0x2004038c <uart_prints>
+20040214: 31 64        	lui	s0, 12
+
+20040216 <.LBB0_1>:
+20040216: 01 45        	mv	a0, zero
+20040218: 55 22        	cjal	0x200403bc <read_mtime>
+2004021a: 25 81        	srli	a0, a0, 9
+2004021c: 61 8d        	and	a0, a0, s0
+2004021e: b9 65        	lui	a1, 14
+20040220: 55 2a        	cjal	0x200403d4 <gpio_out>
+20040222: d5 bf        	j	0x20040216 <.LBB0_1>
+
+20040224 <from_root>:
+20040224: db 95 41 fe  	cincoffset	ca1, cgp, -28
+20040228: db a5 85 00  	csetbounds	ca1, ca1, 8
+2004022c: 8c 61        	clc	ca1, 0(ca1)
+2004022e: 5b 85 a5 20  	csetaddr	ca0, ca1, a0
+20040232: 82 80        	cret
+
+20040234 <populate_caprelocs>:
+20040234: 7d 71        	cincoffset	csp, csp, -16
+20040236: 22 e4        	csc	cs0, 8(csp)
+20040238: 26 e0        	csc	cs1, 0(csp)
+2004023a: 01 46        	mv	a2, zero
+2004023c: d1 42        	addi	t0, zero, 20
+2004023e: 5b 93 41 fe  	cincoffset	ct1, cgp, -28
+20040242: 5b 23 83 00  	csetbounds	ct1, ct1, 8
+20040246: 63 80 c5 06  	beq	a1, a2, 0x200402a6 <.LBB1_5>
+
+2004024a <.LBB1_1>:
+2004024a: b3 06 56 02  	mul	a3, a2, t0
+2004024e: 5b 07 d5 22  	cincoffset	ca4, ca0, a3
+20040252: 83 23 07 00  	clw	t2, 0(ca4)
+20040256: 13 87 06 01  	addi	a4, a3, 16
+2004025a: 5b 07 e5 22  	cincoffset	ca4, ca0, a4
+2004025e: 1c 43        	clw	a5, 0(ca4)
+20040260: 03 37 03 00  	clc	ca4, 0(ct1)
+20040264: 63 c5 07 00  	bltz	a5, 0x2004026e <.LBB1_3>
+20040268: db 07 07 20  	csetaddr	ca5, ca4, zero
+2004026c: 19 a0        	j	0x20040272 <.LBB1_4>
+
+2004026e <.LBB1_3>:
+2004026e: 97 07 00 00  	auipcc	ca5, 0
+
+20040272 <.LBB1_4>:
+20040272: 13 84 46 00  	addi	s0, a3, 4
+20040276: 5b 04 85 22  	cincoffset	cs0, ca0, s0
+2004027a: 00 40        	clw	s0, 0(cs0)
+2004027c: 93 84 c6 00  	addi	s1, a3, 12
+20040280: db 04 95 22  	cincoffset	cs1, ca0, s1
+20040284: 84 40        	clw	s1, 0(cs1)
+20040286: a1 06        	addi	a3, a3, 8
+20040288: db 06 d5 22  	cincoffset	ca3, ca0, a3
+2004028c: 94 42        	clw	a3, 0(ca3)
+2004028e: 5b 07 77 20  	csetaddr	ca4, ca4, t2
+20040292: db 87 87 20  	csetaddr	ca5, ca5, s0
+20040296: db 87 97 10  	csetbounds	ca5, ca5, s1
+2004029a: db 86 d7 22  	cincoffset	ca3, ca5, a3
+2004029e: 14 e3        	csc	ca3, 0(ca4)
+200402a0: 05 06        	addi	a2, a2, 1
+200402a2: e3 94 c5 fa  	bne	a1, a2, 0x2004024a <.LBB1_1>
+
+200402a6 <.LBB1_5>:
+200402a6: 82 64        	clc	cs1, 0(csp)
+200402a8: 22 64        	clc	cs0, 8(csp)
+200402aa: 41 61        	cincoffset	csp, csp, 16
+200402ac: 82 80        	cret
+
+200402ae <cstart>:
+200402ae: 7d 71        	cincoffset	csp, csp, -16
+200402b0: 06 e4        	csc	cra, 8(csp)
+200402b2: 22 e0        	csc	cs0, 0(csp)
+200402b4: 5b 94 41 fe  	cincoffset	cs0, cgp, -28
+200402b8: 5b 24 84 00  	csetbounds	cs0, cs0, 8
+200402bc: 08 e0        	csc	ca0, 0(cs0)
+200402be: 5b 85 a5 fe  	cmove	ca0, ca1
+200402c2: b2 85        	mv	a1, a2
+200402c4: 85 3f        	cjal	0x20040234 <populate_caprelocs>
+200402c6: 08 60        	clc	ca0, 0(cs0)
+200402c8: b7 05 00 20  	lui	a1, 131072
+200402cc: db 05 b5 20  	csetaddr	ca1, ca0, a1
+200402d0: 5b 96 c1 fe  	cincoffset	ca2, cgp, -20
+200402d4: 5b 26 86 00  	csetbounds	ca2, ca2, 8
+200402d8: 0c e2        	csc	ca1, 0(ca2)
+200402da: b7 05 04 20  	lui	a1, 131136
+200402de: db 05 b5 20  	csetaddr	ca1, ca0, a1
+200402e2: 5b 96 41 ff  	cincoffset	ca2, cgp, -12
+200402e6: 5b 26 86 00  	csetbounds	ca2, ca2, 8
+200402ea: 0c e2        	csc	ca1, 0(ca2)
+200402ec: b7 05 0f 20  	lui	a1, 131312
+200402f0: db 05 b5 20  	csetaddr	ca1, ca0, a1
+200402f4: 5b 96 c1 ff  	cincoffset	ca2, cgp, -4
+200402f8: 5b 26 86 00  	csetbounds	ca2, ca2, 8
+200402fc: 0c e2        	csc	ca1, 0(ca2)
+200402fe: b7 b5 00 8f  	lui	a1, 585739
+20040302: db 05 b5 20  	csetaddr	ca1, ca0, a1
+20040306: 5b 96 41 00  	cincoffset	ca2, cgp, 4
+2004030a: 5b 26 86 00  	csetbounds	ca2, ca2, 8
+2004030e: 0c e2        	csc	ca1, 0(ca2)
+20040310: b7 15 00 14  	lui	a1, 81921
+20040314: c1 05        	addi	a1, a1, 16
+20040316: db 05 b5 20  	csetaddr	ca1, ca0, a1
+2004031a: 5b 96 c1 00  	cincoffset	ca2, cgp, 12
+2004031e: 5b 26 86 00  	csetbounds	ca2, ca2, 8
+20040322: 0c e2        	csc	ca1, 0(ca2)
+20040324: b7 f5 00 8f  	lui	a1, 585743
+20040328: 5b 05 b5 20  	csetaddr	ca0, ca0, a1
+2004032c: db 95 41 01  	cincoffset	ca1, cgp, 20
+20040330: db a5 85 00  	csetbounds	ca1, ca1, 8
+20040334: 88 e1        	csc	ca0, 0(ca1)
+20040336: 15 20        	cjal	0x2004035a <uart_init>
+20040338: 01 45        	mv	a0, zero
+2004033a: 81 45        	mv	a1, zero
+2004033c: d1 35        	cjal	0x20040200 <mymain>
+2004033e: a1 20        	cjal	0x20040386 <stop_sim>
+
+20040340 <.LBB2_1>:
+20040340: 01 a0        	j	0x20040340 <.LBB2_1>
+20040342: 00 00        	unimp	
+
+20040344 <uart_send_char>:
+20040344: db 95 41 00  	cincoffset	ca1, cgp, 4
+20040348: db a5 85 00  	csetbounds	ca1, ca1, 8
+2004034c: 8c 61        	clc	ca1, 0(ca1)
+
+2004034e <.LBB0_1>:
+2004034e: d0 49        	clw	a2, 20(ca1)
+20040350: 13 76 06 06  	andi	a2, a2, 96
+20040354: 6d de        	beqz	a2, 0x2004034e <.LBB0_1>
+20040356: 88 c1        	csw	a0, 0(ca1)
+20040358: 82 80        	cret
+
+2004035a <uart_init>:
+2004035a: 5b 95 41 00  	cincoffset	ca0, cgp, 4
+2004035e: 5b 25 85 00  	csetbounds	ca0, ca0, 8
+20040362: 08 61        	clc	ca0, 0(ca0)
+20040364: 93 05 30 08  	addi	a1, zero, 131
+20040368: 4c c5        	csw	a1, 12(ca0)
+2004036a: b9 45        	addi	a1, zero, 14
+2004036c: 4c d1        	csw	a1, 36(ca0)
+2004036e: a9 45        	addi	a1, zero, 10
+20040370: 0c c1        	csw	a1, 0(ca0)
+20040372: 23 22 05 00  	csw	zero, 4(ca0)
+20040376: 8d 45        	addi	a1, zero, 3
+20040378: 4c c5        	csw	a1, 12(ca0)
+2004037a: 85 45        	addi	a1, zero, 1
+2004037c: 0c c5        	csw	a1, 8(ca0)
+2004037e: 93 05 00 02  	addi	a1, zero, 32
+20040382: 0c c1        	csw	a1, 0(ca0)
+20040384: 82 80        	cret
+
+20040386 <stop_sim>:
+20040386: 13 05 f0 0f  	addi	a0, zero, 255
+2004038a: 6d bf        	j	0x20040344 <uart_send_char>
+
+2004038c <uart_prints>:
+2004038c: 3d 71        	cincoffset	csp, csp, -32
+2004038e: 06 ec        	csc	cra, 24(csp)
+20040390: 22 e8        	csc	cs0, 16(csp)
+20040392: 26 e4        	csc	cs1, 8(csp)
+20040394: 5b 04 a5 fe  	cmove	cs0, ca0
+20040398: 81 44        	mv	s1, zero
+
+2004039a <.LBB3_1>:
+2004039a: 13 05 00 02  	addi	a0, zero, 32
+2004039e: 63 8a a4 00  	beq	s1, a0, 0x200403b2 <.LBB3_4>
+200403a2: 5b 05 94 22  	cincoffset	ca0, cs0, s1
+200403a6: 03 45 05 00  	clbu	a0, 0(ca0)
+200403aa: 01 c5        	beqz	a0, 0x200403b2 <.LBB3_4>
+200403ac: 61 3f        	cjal	0x20040344 <uart_send_char>
+200403ae: 85 04        	addi	s1, s1, 1
+200403b0: ed b7        	j	0x2004039a <.LBB3_1>
+
+200403b2 <.LBB3_4>:
+200403b2: a2 64        	clc	cs1, 8(csp)
+200403b4: 42 64        	clc	cs0, 16(csp)
+200403b6: e2 60        	clc	cra, 24(csp)
+200403b8: 05 61        	cincoffset	csp, csp, 32
+200403ba: 82 80        	cret
+
+200403bc <read_mtime>:
+200403bc: db 95 c1 00  	cincoffset	ca1, cgp, 12
+200403c0: db a5 85 00  	csetbounds	ca1, ca1, 8
+200403c4: 8c 61        	clc	ca1, 0(ca1)
+200403c6: 33 35 a0 00  	snez	a0, a0
+200403ca: 0a 05        	slli	a0, a0, 2
+200403cc: 5b 85 a5 22  	cincoffset	ca0, ca1, a0
+200403d0: 08 41        	clw	a0, 0(ca0)
+200403d2: 82 80        	cret
+
+200403d4 <gpio_out>:
+200403d4: 5b 96 41 01  	cincoffset	ca2, cgp, 20
+200403d8: 5b 26 86 00  	csetbounds	ca2, ca2, 8
+200403dc: 10 62        	clc	ca2, 0(ca2)
+200403de: 48 c2        	csw	a0, 4(ca2)
+200403e0: 0c c6        	csw	a1, 8(ca2)
+200403e2: 82 80        	cret
+200403e4: 48 65        	clc	ca0, 136(ca0)
+200403e6: 6c 6c        	clc	ca1, 216(cs0)
+200403e8: 6f 20 77 6f  	j	0x200b32de <__cap_relocs_end+0x712a6>
+200403ec: 72 6c        	<unknown>
+200403ee: 64 21        	<unknown>
+200403f0: 0a 00        	c.slli	zero, 2
