@@ -27,11 +27,20 @@ cd <ws>
 git submodule update --init --recursive
 ```
 
-## Building and running a simulation
+## Running a verilator simulation
+See the readme and examples under [sim/verilator](https://github.com/microsoft/cheriot-safe/tree/main/sim/verilator).
+
+## Running a VCS simulation
 1. Review the ./sim/Makefile for the correct path to the vcs simulator.
 2. Execute: ./trun hello_world
 3. Test output is in ./out/run/hello_world/...
 
+## Building FPGA bitfile
+See the readme under [build/](https://github.com/microsoft/cheriot-safe/tree/main/build)
+
 ## Board Support
 Currently cheriot-safe supports the Diligent Arty A7-100T board. 
+
+## Design documentation
+See the [wiki section](https://github.com/microsoft/cheriot-safe/wiki) for more information about the cheri_safe FPGA design
 
