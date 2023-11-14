@@ -13,6 +13,7 @@ create_clock -period 20.000 -name tck_clk_pin -waveform {0.000 10.000} [get_pins
 create_clock -period 20.000 -name spi0_clk_pin -waveform {0.000 10.000} [get_pins xPAD_sck0_inst/O]
 
 set_property CLOCK_DEDICATED_ROUTE FALSE [ get_nets {sck0} ];
+set_property CLOCK_DEDICATED_ROUTE FALSE [ get_nets {sck0_i_IBUF} ];
 
 set_clock_groups -asynchronous \
   -group {board_clk_pin} \
