@@ -100,6 +100,7 @@ read_verilog -sv [ glob $DesignRoot/src/msft_cheri_subsystem/msftDvIp_cheri0_sub
 #$DesignRoot/src/msft_cheri_arty7/PULLUP.v
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvDebug_jtag2AxiApb_pkg.sv ]
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvIp_mmcm_arty7_0.sv ]
+read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvIp_mmcm_arty7_1.sv ]
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvIp_led_alive.sv ]
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvDebug_sync_pulse_gen.sv ]
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvDebug_globals.sv ]
