@@ -403,4 +403,5 @@ FodyWeavers.xsd
 
 *.jou
 build/RUN*/*
+build/.*
 

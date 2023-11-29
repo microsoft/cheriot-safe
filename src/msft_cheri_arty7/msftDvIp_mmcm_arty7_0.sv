@@ -53,12 +53,12 @@ module msftDvIp_mmcm_arty7_0
       div_clk <= 3'h0; 
       clk20Mhz <= 1'b0;
     end else begin
-      if(div_clk == 3'h3) begin
+      if(div_clk == 3'h4) begin
         div_clk <= 3'h0;
-        clk20Mhz <= ~clk20Mhz;
       end else begin
         div_clk <= div_clk + 1'b1;
       end 
+      clk20Mhz <= (div_clk <=2);     // div 5, let's not worry about duty cycle
     end
   end
 

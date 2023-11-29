@@ -458,6 +458,7 @@ msftDvIp_cheri0_subsystem #(
 //  .s_axi_rvalid                  ( rvalid_dmb_m                             )
 //);
 
+logic [31:0] rdata_dmb32;
 // ==================================================
 // Instance axi_etherlite 
 // ==================================================
@@ -479,7 +480,7 @@ msftDvIp_cheri0_subsystem #(
   .s_axi_arvalid                 ( arvalid_dmb_m ),
   .s_axi_arready                 ( arready_dmb_m ),
   .s_axi_rready                  ( rready_dmb_m  ),
-  .s_axi_rdata                   ( rdata_dmb_m   ),
+  .s_axi_rdata                   ( rdata_dmb32   ),
   .s_axi_rresp                   ( rresp_dmb_m   ),
   .s_axi_rvalid                  ( rvalid_dmb_m  ),
   .phy_tx_clk                    ( phy_tx_clk    ),
@@ -496,8 +497,11 @@ msftDvIp_cheri0_subsystem #(
   .phy_mdio_o                    ( phy_mdio_out  ),                  
   .phy_mdio_t                    ( phy_mdio_t    ),
   .phy_mdc                       ( phy_mdc       )
-);                                 
-                                   
+);
+assign rdata_dmb_m = {rdata_dmb32, rdata_dmb32};                                 
+assign rlast_dmb_m = 1'b1;
+assign rid_dmb_m = 0;
+
 //   phy_tx_clk : IN STD_LOGIC;
 //   phy_rx_clk : IN STD_LOGIC;
 //   phy_crs : IN STD_LOGIC;
