@@ -462,7 +462,7 @@ logic [31:0] rdata_dmb32;
 // ==================================================
 // Instance axi_etherlite 
 // ==================================================
-  axi_ethernetlite_csafe0 eth_mac_i (
+eth_mac_lite   eth_mac_i (
   .s_axi_aclk                    ( sysclk        ),
   .s_axi_aresetn                 ( rstn          ),
   .ip2intc_irpt                  ( eth_irq),
@@ -498,6 +498,7 @@ logic [31:0] rdata_dmb32;
   .phy_mdio_t                    ( phy_mdio_t    ),
   .phy_mdc                       ( phy_mdc       )
 );
+
 assign rdata_dmb_m = {rdata_dmb32, rdata_dmb32};                                 
 assign rlast_dmb_m = 1'b1;
 assign rid_dmb_m = 0;

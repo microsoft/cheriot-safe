@@ -37,19 +37,18 @@ set_param synth.elaboration.rodinMoreOptions "rt::set_parameter allowIndexedDefp
 #==================================================
 # Create ethernet MAC IP
 #==================================================
-exec rm -rf ./.srcs/ ./.gen/ ./.ip_user_files
-create_ip -name axi_ethernetlite -vendor xilinx.com -library ip -version 3.0 -module_name axi_ethernetlite_csafe0
-set_property -dict [list \
-  CONFIG.AXI_ACLK_FREQ_MHZ {20} \
-  CONFIG.C_INCLUDE_INTERNAL_LOOPBACK {1} \
-] [get_ips axi_ethernetlite_csafe0] 
+#exec rm -rf ./.srcs/ ./.gen/ ./.ip_user_files
+#create_ip -name axi_ethernetlite -vendor xilinx.com -library ip -version 3.0 -module_name axi_ethernetlite_csafe0
+#set_property -dict [list \
+#  CONFIG.AXI_ACLK_FREQ_MHZ {20} \
+#  CONFIG.C_INCLUDE_INTERNAL_LOOPBACK {1} \
+#] [get_ips axi_ethernetlite_csafe0] 
 
-synth_ip [get_ips axi_ethernetlite_csafe0]
+#synth_ip [get_ips axi_ethernetlite_csafe0]
 
-generate_target all [get_ips axi_ethernetlite_csafe0]
-update_compile_order -fileset sources_1
-export_ip_user_files -of_objects [get_files ./.srcs/sources_1/ip/axi_ethernetlite_csafe0/axi_ethernetlite_csafe0.xci] -no_script -sync -force -quiet
-#export_ip_user_files -of_objects [get_files ./.srcs/sources_1/ip/axi_ethernetlite_csafe0/axi_ethernetlite_csafe0.xci] -sync -force -quiet
+#generate_target all [get_ips axi_ethernetlite_csafe0]
+#update_compile_order -fileset sources_1
+#export_ip_user_files -of_objects [get_files ./.srcs/sources_1/ip/axi_ethernetlite_csafe0/axi_ethernetlite_csafe0.xci] -no_script -sync -force -quiet
 
 #==================================================
 # Source RTL
