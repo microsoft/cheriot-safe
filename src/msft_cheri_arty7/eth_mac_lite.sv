@@ -556,7 +556,7 @@ module eth_mac_lite (
       RX_DONE:
         rx_fsm_d = RX_IDLE;
       RX_OVR:
-        if (~rx_fifo_rvalid | rx_eof) rx_fsm_d = RX_IDLE;  // discard entire frame
+        if (rx_eof) rx_fsm_d = RX_IDLE;  // discard entire frame
       default:
         rx_fsm_d = RX_IDLE;
     endcase
@@ -644,7 +644,7 @@ module eth_mac_lite (
     end
   end
 
-  assign rx_fifo_rready = (rx_fsm_q == RX_DATA);
+  assign rx_fifo_rready = (rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR);
   assign rx_ram_p0_we = 1'b1;
 
 
