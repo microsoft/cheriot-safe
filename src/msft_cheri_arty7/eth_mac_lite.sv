@@ -6,7 +6,7 @@
 module eth_mac_lite (
   input  logic        s_axi_aclk,
   input  logic        s_axi_aresetn,
-  output logic        ip2intc_irpt,
+  output logic        eth_irq,
   input  logic [13:0] s_axi_awaddr,
   input  logic        s_axi_awvalid,
   output logic        s_axi_awready,
@@ -184,7 +184,7 @@ module eth_mac_lite (
   //===================================
   assign reg_wr_done = 1'b1;
 
-  logic [31:0] mac_regs_rdata[0:15];
+  logic [31:0] mac_regs_rdata[0:31];
   logic        mac_reg_sel;
   logic [31:0] scratch_regs[0:3];
 
@@ -197,19 +197,26 @@ module eth_mac_lite (
   logic [15:0] tx_len_0, tx_len_1;
   logic        tx_stat_0, tx_stat_1;
   logic        tx_done_0, tx_done_1;
+  logic        tx_intr_stat;
+  logic        tx_err_0, tx_err_1;
  
+  logic [15:0] rx_len_0, rx_len_1;
   logic        rx_stat_0, rx_stat_1;
+  logic        rx_err_0, rx_err_1;
+  logic        rx_intr_stat;
+  logic        intr_enable;
+  logic [31:0] tx_dbg_info, rx_dbg_info;
 
   always_comb begin
     case (reg_raddr[11:10])
       2'b00:
-        reg_rdata = mac_regs_rdata[reg_raddr[3:0]];
+        reg_rdata = mac_regs_rdata[reg_raddr[4:0]];
       2'b01:
         reg_rdata = tx_ram_p0_rdata;
       2'b10:
         reg_rdata = rx_ram_p1_rdata;
       default:
-        reg_rdata = mac_regs_rdata[reg_raddr[3:0]];
+        reg_rdata = mac_regs_rdata[reg_raddr[4:0]];
     endcase
   end
 
@@ -222,26 +229,40 @@ module eth_mac_lite (
   assign mac_regs_rdata[6]  = {16'h0, mdio_rdata}; 
   assign mac_regs_rdata[7]  = {27'h0, mdio_init, mdio_en, mdio_stat}; 
   assign mac_regs_rdata[8]  = {16'h0, tx_len_0}; 
-  assign mac_regs_rdata[9]  = {31'h0, tx_stat_0}; 
+  assign mac_regs_rdata[9]  = {30'h0, tx_err_0, tx_stat_0}; 
   assign mac_regs_rdata[10] = {16'h0, tx_len_1}; 
-  assign mac_regs_rdata[11] = {31'h0, tx_stat_1}; 
-  assign mac_regs_rdata[12] = {31'h0, rx_stat_0}; 
-  assign mac_regs_rdata[13] = {31'h0, rx_stat_1}; 
+  assign mac_regs_rdata[11] = {30'h0, tx_err_1, tx_stat_1}; 
+  assign mac_regs_rdata[12] = {30'h0, rx_err_0,  rx_stat_0}; 
+  assign mac_regs_rdata[13] = {30'h0, rx_err_1,  rx_stat_1}; 
+  assign mac_regs_rdata[14] = {31'h0, intr_enable}; 
+  assign mac_regs_rdata[15] = {30'h0, rx_intr_stat, tx_intr_stat}; 
+  assign mac_regs_rdata[16] = {rx_len_1, rx_len_0}; 
+  assign mac_regs_rdata[17] = tx_dbg_info;
+  assign mac_regs_rdata[18] = rx_dbg_info;
 
-  assign mac_reg_sel = (reg_waddr[11:4] == 0);
+  for (genvar i = 19; i<32; i++) begin : g_unused_regs
+    assign mac_regs_rdata[i] = 32'h0; 
+  end
+
+  assign mac_reg_sel = (reg_waddr[11:5] == 0);
+
+  assign eth_irq = intr_enable & (rx_intr_stat | tx_intr_stat);
 
   always @(posedge s_axi_aclk or negedge s_axi_aresetn)
   begin
     int i;
     if (~s_axi_aresetn) begin
       reg_rd_done    <= 1'b0;
+      intr_enable    <= 1'b0;
       for (i = 0; i < 4; i++) scratch_regs[i] <= 32'h0;
     end else begin
       for (i = 0; i < 4; i++) begin
-        if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == i)) begin
+        if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == i)) 
           scratch_regs[i] <= reg_wdata;
-        end
       end
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 14)) 
+        intr_enable = reg_wdata[0];
 
       reg_rd_done <= reg_rd_req;
     end
@@ -272,16 +293,16 @@ module eth_mac_lite (
       mdio_rdata     <= 0;
       phy_mdio_o     <= 1'b1;
     end else begin
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 4)) begin
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 4)) begin
         mdio_op       <= reg_wdata[10];
         mdio_phy_addr <= reg_wdata[9:5];
         mdio_reg_addr <= reg_wdata[4:0];
       end
 
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 5)) 
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 5)) 
         mdio_wdata <= reg_wdata[15:0];
 
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 7)) begin
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 7)) begin
         mdio_en <= reg_wdata[3];
         if (mdio_en && reg_wdata[0]) mdio_stat <= 1'b1; 
       end else if (mdio_cnt >= MDIO_CNT_MAX) begin
@@ -353,6 +374,9 @@ module eth_mac_lite (
 	// Let's do 10Mbps only, for MAC
 	//  -- Tx_clk rising edge launch tx_data
 	//  -- Rx_clk falling edge sample tx_data
+   
+  // inter-frame gap 9.6us (10Base-T) in 20MHz cycles, plus time to flush 12 nibbles in the tx FIFO
+  localparam TX_IFG_MAX = 300; 
 
   // Tx MII driver 
   assign phy_tx_en   = tx_fifo_rvalid & tx_fifo_rready;
@@ -370,13 +394,15 @@ module eth_mac_lite (
   end
   
   // Main Tx state machine
-  typedef enum logic [3:0] {TX_IDLE, TX_DATA, TX_DONE} tx_fsm_t;
+  typedef enum logic [3:0] {TX_IDLE, TX_DATA, TX_DONE, TX_IFG} tx_fsm_t;
   tx_fsm_t  tx_fsm_d, tx_fsm_q;
 
   logic [11:0] tx_nibl_cnt, tx_nibl_cnt_max;
   logic        cur_tx_buf;
   logic        tx_nibl_req;
   logic  [2:0] tx_nibl_cnt_lsb_q;
+  logic  [8:0] tx_ifg_cnt;
+  logic        tx_err_acc;
 
   assign tx_done_0 = (tx_fsm_q == TX_DONE) & ~cur_tx_buf;
   assign tx_done_1 = (tx_fsm_q == TX_DONE) & cur_tx_buf;
@@ -387,15 +413,19 @@ module eth_mac_lite (
   assign tx_ram_p1_cs    = (tx_fsm_q == TX_DATA);
   assign tx_ram_p1_addr  = {cur_tx_buf, tx_nibl_cnt[11:3]};
 
+  assign tx_dbg_info = {27'h0, cur_tx_buf, tx_fsm_q};
+
   always_comb begin
     tx_fsm_d = tx_fsm_q;
     case (tx_fsm_q)
       TX_IDLE:
-        if (tx_stat_0 | tx_stat_1) tx_fsm_d = TX_DATA;
+        if ((tx_stat_0 | tx_stat_1) & ~phy_crs) tx_fsm_d = TX_DATA;
       TX_DATA:
         if ((tx_nibl_cnt >= tx_nibl_cnt_max) && tx_nibl_req) tx_fsm_d = TX_DONE;
       TX_DONE:
-        tx_fsm_d = TX_IDLE;
+        tx_fsm_d = TX_IFG;
+      TX_IFG:         // inter-frame gap
+        if (tx_ifg_cnt == TX_IFG_MAX) tx_fsm_d = TX_IDLE;
       default:
         tx_fsm_d = TX_IDLE;
     endcase
@@ -416,27 +446,32 @@ module eth_mac_lite (
   always @(posedge s_axi_aclk or negedge s_axi_aresetn)
   begin
     if (~s_axi_aresetn) begin
-      tx_len_0     <= 0;
-      tx_len_1     <= 0;
-      tx_stat_0    <= 1'b0;
-      tx_stat_1    <= 1'b0;
-      tx_fsm_q     <= TX_IDLE;
-      cur_tx_buf   <= 1'b0;
-      tx_nibl_cnt  <= 0;
+      tx_len_0          <= 0;
+      tx_len_1          <= 0;
+      tx_stat_0         <= 1'b0;
+      tx_stat_1         <= 1'b0;
+      tx_fsm_q          <= TX_IDLE;
+      cur_tx_buf        <= 1'b0;
+      tx_nibl_cnt       <= 0;
       tx_nibl_cnt_lsb_q <= 0; 
       tx_fifo_wvalid    <= 1'b0;
+      tx_ifg_cnt        <= 0;
+      tx_intr_stat      <= 1'b0;
+      tx_err_acc        <= 1'b0;
+      tx_err_0          <= 1'b0;
+      tx_err_1          <= 1'b0;
     end else begin  
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 8)) 
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 8)) 
         tx_len_0 <= reg_wdata[15:0];
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 10))
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 10))
         tx_len_1 <= reg_wdata[15:0];
 
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 9) && reg_wdata[0]) 
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 9) && reg_wdata[0]) 
         tx_stat_0 <= 1'b1;
       else if (tx_done_0)
         tx_stat_0 <= 1'b0;
 
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 11) && reg_wdata[0]) 
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 11) && reg_wdata[0]) 
         tx_stat_1 <= 1'b1;
       else if (tx_done_1)
         tx_stat_1 <= 1'b0;
@@ -456,6 +491,26 @@ module eth_mac_lite (
       tx_nibl_cnt_lsb_q <= tx_nibl_cnt[2:0];
       tx_fifo_wvalid    <= tx_nibl_req;
 
+      if (tx_fsm_q == TX_IFG)
+        tx_ifg_cnt <= tx_ifg_cnt + 1;
+      else
+        tx_ifg_cnt <= 0;
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 15) && reg_wdata[0]) 
+        tx_intr_stat <= 1'b0;
+      else if (tx_fsm_q == TX_DONE)
+        tx_intr_stat <= 1'b1;
+
+      if (tx_fsm_q == TX_DONE)
+        tx_err_acc <= 1'b0;
+      else if ((tx_fsm_q == TX_DATA) & phy_col)
+        tx_err_acc <= 1'b1;
+
+      if ((tx_fsm_q == TX_DONE) && ~cur_tx_buf)
+        tx_err_0 <= tx_err_acc;
+
+      if ((tx_fsm_q == TX_DONE) && cur_tx_buf)
+        tx_err_1 <= tx_err_acc;
     end
   end
 
@@ -484,9 +539,11 @@ module eth_mac_lite (
 
   logic [11:0] rx_nibl_cnt;
   logic        cur_rx_buf;
-  logic        rx_eof;
+  logic        rx_eof, rx_err_acc;
 
-  assign rx_eof = rx_fifo_rvalid & rx_fifo_rdata[4];
+  assign rx_eof = rx_fifo_rvalid & ~rx_fifo_rdata[4];
+
+  assign rx_dbg_info = {27'h0, cur_rx_buf, rx_fsm_q};
 
   always_comb begin
     rx_fsm_d = rx_fsm_q;
@@ -495,7 +552,7 @@ module eth_mac_lite (
         if (rx_fifo_rvalid & (~rx_stat_0 | ~rx_stat_1)) rx_fsm_d = RX_DATA;
         else if (rx_fifo_rvalid) rx_fsm_d = RX_OVR;
       RX_DATA:
-        if (~rx_fifo_rvalid | rx_eof) rx_fsm_d = RX_DONE;
+        if (rx_eof) rx_fsm_d = RX_DONE;
       RX_DONE:
         rx_fsm_d = RX_IDLE;
       RX_OVR:
@@ -507,19 +564,27 @@ module eth_mac_lite (
 
   always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
     if (~s_axi_aresetn) begin
-      rx_stat_0    <= 1'b0;
-      rx_stat_1    <= 1'b0;
-      rx_fsm_q     <= RX_IDLE;
-      cur_rx_buf   <= 1'b0;
-      rx_nibl_cnt  <= 0;
-      rx_ram_p0_wdata = 32'h0;
+      rx_stat_0       <= 1'b0;
+      rx_stat_1       <= 1'b0;
+      rx_fsm_q        <= RX_IDLE;
+      cur_rx_buf      <= 1'b0;
+      rx_nibl_cnt     <= 0;
+      rx_ram_p0_wdata <= 32'h0;
+      rx_ram_p0_cs    <= 1'b0;
+      rx_ram_p0_addr  <= 0;
+      rx_intr_stat    <= 1'b0;
+      rx_err_acc      <= 1'b0;
+      rx_err_0        <= 1'b0;
+      rx_err_1        <= 1'b0;
+      rx_len_0        <= 0;
+      rx_len_1        <= 0;
     end else begin
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 12) && reg_wdata[0]) 
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 12) && reg_wdata[0]) 
         rx_stat_0 <= 1'b0;
       else if ((rx_fsm_q == RX_DONE) & ~cur_rx_buf)
         rx_stat_0 <= 1'b1;
 
-      if (reg_wr_req & mac_reg_sel && (reg_waddr[3:0] == 13) && reg_wdata[0]) 
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 13) && reg_wdata[0]) 
         rx_stat_1 <= 1'b0;
       else if ((rx_fsm_q == RX_DONE) & cur_rx_buf)
         rx_stat_1 <= 1'b1;
@@ -533,21 +598,55 @@ module eth_mac_lite (
 
       if (rx_fsm_q != RX_DATA) 
         rx_nibl_cnt  <= 0;
-      else if ((rx_fsm_q == RX_DATA) & ~rx_eof)
+      else if ((rx_fsm_q == RX_DATA) & rx_fifo_rvalid & ~rx_eof)
         rx_nibl_cnt <= rx_nibl_cnt + 1;
 
       if (rx_fsm_q != RX_DATA) 
         rx_ram_p0_wdata <= 32'h0;
-      else if (rx_fifo_rvalid & ~rx_eof)
-        rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:4], rx_fifo_rdata};
+      else if (rx_fifo_rvalid & ~rx_eof) begin
+        rx_ram_p0_wdata <= {rx_fifo_rdata[3:0], rx_ram_p0_wdata[31:4]};
+        case (rx_nibl_cnt[2:0])
+          0: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:4], rx_fifo_rdata[3:0]};
+          1: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:8], rx_fifo_rdata[3:0], rx_ram_p0_wdata[3:0]};
+          2: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:12], rx_fifo_rdata[3:0], rx_ram_p0_wdata[7:0]};
+          3: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:16], rx_fifo_rdata[3:0], rx_ram_p0_wdata[11:0]};
+          4: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:20], rx_fifo_rdata[3:0], rx_ram_p0_wdata[15:0]};
+          5: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:24], rx_fifo_rdata[3:0], rx_ram_p0_wdata[19:0]};
+          6: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:28], rx_fifo_rdata[3:0], rx_ram_p0_wdata[23:0]};
+          7: rx_ram_p0_wdata <= {rx_fifo_rdata[3:0], rx_ram_p0_wdata[27:0]};
+          default: rx_ram_p0_wdata <= 32'hffff_ffff;
+        endcase
+      end
+      
+      // this might result in an extra write when eof comes after 8x nibbiles.. but harmless?
+      rx_ram_p0_cs   <= (rx_fsm_q == RX_DATA) & rx_fifo_rvalid & ((rx_nibl_cnt[2:0] == 7) | rx_eof);
+      rx_ram_p0_addr <= {cur_rx_buf, rx_nibl_cnt[11:3]};
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 15) && reg_wdata[1]) 
+        rx_intr_stat <= 1'b0;
+      else if (rx_fsm_q == RX_DONE)
+        rx_intr_stat <= 1'b1;
+
+      if (rx_fsm_q == RX_DONE)
+        rx_err_acc <= 1'b0;
+      else if ((rx_fsm_q == RX_DATA) & phy_rx_er)
+        rx_err_acc <= 1'b1;
+
+      if ((rx_fsm_q == RX_DONE) && ~cur_rx_buf) begin
+        rx_err_0 <= rx_err_acc;
+        rx_len_0 <= rx_nibl_cnt[11:1];
+      end
+
+      if ((rx_fsm_q == RX_DONE) && cur_rx_buf) begin
+        rx_err_1 <= rx_err_acc;
+        rx_len_1 <= rx_nibl_cnt[11:1];
+      end
     end
   end
 
-  assign rx_fifo_rready = 1'b1;
+  assign rx_fifo_rready = (rx_fsm_q == RX_DATA);
   assign rx_ram_p0_we = 1'b1;
 
-  assign rx_ram_p0_cs = (rx_fsm_q == RX_DATA) & ((rx_nibl_cnt[2:0] == 7) | rx_eof);
-  assign rx_ram_p0_addr = {cur_rx_buf, rx_nibl_cnt[11:3]};
 
   //===================================
   // Tx/Rx buffere memories

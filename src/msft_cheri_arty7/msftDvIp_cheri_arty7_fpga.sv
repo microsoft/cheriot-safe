@@ -465,7 +465,7 @@ logic [31:0] rdata_dmb32;
 eth_mac_lite   eth_mac_i (
   .s_axi_aclk                    ( sysclk        ),
   .s_axi_aresetn                 ( rstn          ),
-  .ip2intc_irpt                  ( eth_irq),
+  .eth_irq                       ( eth_irq),
   .s_axi_awaddr                  ( awaddr_dmb_m  ),
   .s_axi_awvalid                 ( awvalid_dmb_m ),
   .s_axi_awready                 ( awready_dmb_m ),
