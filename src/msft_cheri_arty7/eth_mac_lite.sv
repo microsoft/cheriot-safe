@@ -358,7 +358,8 @@ module eth_mac_lite (
         endcase
       end
 
-      if (mdio_stat & mdio_op & mdio_cnt[0] && (mdio_cnt[6:1]>16)) begin // falling edge of mdc
+      // falling edge of mdc sampling
+      if (mdio_stat & mdio_op & mdio_cnt[0] && (mdio_cnt[6:1]>15) && (mdio_cnt[6:1]<32)) begin
         mdio_rdata <= {mdio_rdata[14:0], phy_mdio_i};
       end
       
