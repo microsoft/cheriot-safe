@@ -22,7 +22,8 @@ module msftDvIp_cheri_arty7_fpga (
   input                                      TDI_i,
   inout                                      TDO_io,
   output                                     alive_o,
-  output                                     TRSTn_mux_o,
+  output                                     eth_alive_o,
+//  output                                     TRSTn_mux_o,
   output                                     txd_dvp_o,
   input                                      rxd_dvp_i,
   inout                                      i2c0_scl_io,
@@ -243,6 +244,8 @@ wire          phy_mdio_in;
 wire          phy_mdio_out;
 wire          phy_mdio_t;
 wire          phy_mdc;
+wire          phy_rx_clk;
+wire          phy_tx_clk;
 
 wire          clk_25m;
 wire          eth_irq;
@@ -285,6 +288,17 @@ msftDvIp_led_alive msftDvIp_led_alive_i (
   .rstn_i                        ( rstn                                     ),
   .alive_o                       ( alive                                    )
 );
+
+logic eth_alive;
+logic [31:0] eth_alive_cnt;
+assign eth_alive = eth_alive_cnt[23];
+always @(posedge phy_rx_clk, negedge rstn) begin
+  if (~rstn) begin
+    eth_alive_cnt <= 0;
+  end else begin
+   eth_alive_cnt <= eth_alive_cnt + 1;
+  end
+end
 
 
 // ==================================================
@@ -483,14 +497,17 @@ eth_mac_lite   eth_mac_i (
   .s_axi_rdata                   ( rdata_dmb32   ),
   .s_axi_rresp                   ( rresp_dmb_m   ),
   .s_axi_rvalid                  ( rvalid_dmb_m  ),
-  .phy_tx_clk                    ( phy_tx_clk    ),
   .phy_rx_clk                    ( phy_rx_clk    ),
-  .phy_crs                       ( phy_crs       ),
   .phy_dv                        ( phy_dv        ),
   .phy_rx_data                   ( phy_rx_data   ),
+  //.phy_rx_clk                    ( phy_tx_clk    ),
+  //.phy_dv                        ( phy_tx_en        ),
+  //.phy_rx_data                   ( phy_tx_data   ),
+  .phy_crs                       ( phy_crs       ),
   .phy_col                       ( phy_col       ),
   .phy_rx_er                     ( phy_rx_er     ),
   .phy_rst_n                     ( phy_rst_n     ),
+  .phy_tx_clk                    ( phy_tx_clk    ),
   .phy_tx_en                     ( phy_tx_en     ),
   .phy_tx_data                   ( phy_tx_data   ),
   .phy_mdio_i                    ( phy_mdio_in   ),
@@ -647,7 +664,8 @@ IBUF  xPAD_TMS_inst                                                 (.I(        
 IBUF  xPAD_TDI_inst                                                 (.I(               TDI_i),  .O(                 TDI) );
 IOBUF xPAD_TDO_inst                                                 (.IO(              TDO_io), .I(                 TDO), .O(              TDO_in), .T(         ~TDOoen_dvp) );
 OBUF  xPAD_alive_inst                                               (.O(             alive_o),  .I(               alive) );
-OBUF  xPAD_TRSTn_mux_inst                                           (.O(         TRSTn_mux_o),  .I(           TRSTn_mux) );
+OBUF  xPAD_eth_alive_inst                                           (.O(         eth_alive_o),  .I(               eth_alive) );
+//OBUF  xPAD_TRSTn_mux_inst                                           (.O(         TRSTn_mux_o),  .I(           TRSTn_mux) );
 OBUF  xPAD_txd_dvp_inst                                             (.O(           txd_dvp_o),  .I(             txd_dvp) );
 IBUF  xPAD_rxd_dvp_inst                                             (.I(           rxd_dvp_i),  .O(             rxd_dvp) );
 IOBUF xPAD_i2c0_scl_inst                                            (.IO(         i2c0_scl_io), .I(                1'b0), .O(         i2c0_scl_in), .T(         i2c0_scl_oe) );

@@ -45,7 +45,7 @@ set_property -dict { PACKAGE_PIN A13   IOSTANDARD LVCMOS33 } [get_ports { i2c0_s
 set_property -dict { PACKAGE_PIN H5    IOSTANDARD LVCMOS33 } [get_ports { alive_o }]; #IO_L24N_T3_35 Sch=led[4]
 set_property -dict { PACKAGE_PIN J5    IOSTANDARD LVCMOS33 } [get_ports { gpio0_io[14] }]; #IO_25_35 Sch=led[5]
 set_property -dict { PACKAGE_PIN T9    IOSTANDARD LVCMOS33 } [get_ports { gpio0_io[15] }]; #IO_L24P_T3_A01_D17_14 Sch=led[6]
-set_property -dict { PACKAGE_PIN T10   IOSTANDARD LVCMOS33 } [get_ports { TRSTn_mux_o }]; #IO_L24N_T3_A00_D16_14 Sch=led[7]
+set_property -dict { PACKAGE_PIN T10   IOSTANDARD LVCMOS33 } [get_ports { eth_alive_o }]; #IO_L24N_T3_A00_D16_14 Sch=led[7]
 
 ## Switches
 set_property -dict { PACKAGE_PIN A8    IOSTANDARD LVCMOS33 } [get_ports { gpio0_io[0]}]; #IO_L12N_T1_MRCC_16 Sch=sw[0]

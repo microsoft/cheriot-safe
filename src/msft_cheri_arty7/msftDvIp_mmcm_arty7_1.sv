@@ -44,20 +44,13 @@ module msftDvIp_mmcm_arty7_1
   assign    clk25Mhz_o = clk25Mhz;
   `endif
 
-  assign clk200Mhz_o = sysClk_i & RESETn_i;
-
+  assign clk25Mhz = div_clk[1];
   always @(posedge sysClk_i)
   begin
     if(~RESETn_i) begin
       div_clk <= 3'h0; 
-      clk25Mhz <= 1'b0;
     end else begin
-      if(div_clk == 3'h1) begin
-        div_clk <= 3'h0;
-        clk25Mhz <= ~clk25Mhz;
-      end else begin
-        div_clk <= div_clk + 1'b1;
-      end 
+      div_clk <= div_clk + 1'b1;
     end
   end
 
@@ -159,10 +152,6 @@ module msftDvIp_mmcm_arty7_1
    (.O   (clk25Mhz_o),
     .I   (clk25Mhz));
 
-
-  BUFG clkout2_buf
-   (.O   (clk200Mhz_o),
-    .I   (clk200Mhz));
 
 //  BUFG clkout3_buf
 //   (.O   (usbClk_o),

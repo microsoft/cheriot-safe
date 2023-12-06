@@ -67,7 +67,7 @@ module eth_mac_lite (
                
   logic        rx_fifo_wvalid, rx_fifo_rvalid;
   logic        rx_fifo_wready, rx_fifo_rready;
-  logic [4:0]  rx_fifo_wdata, rx_fifo_rdata;
+  logic [5:0]  rx_fifo_wdata, rx_fifo_rdata;
   logic [4:0]  rx_fifo_wdepth, rx_fifo_rdepth;
   
 
@@ -206,6 +206,9 @@ module eth_mac_lite (
   logic        rx_intr_stat;
   logic        intr_enable;
   logic [31:0] tx_dbg_info, rx_dbg_info;
+  logic [31:0] rx_frame_cnt;
+  logic [31:0] rx_drop_cnt;
+  logic [31:0] rx_err_cnt;
 
   always_comb begin
     case (reg_raddr[11:10])
@@ -227,20 +230,23 @@ module eth_mac_lite (
   assign mac_regs_rdata[4]  = {21'h0, mdio_op, mdio_phy_addr, mdio_reg_addr}; 
   assign mac_regs_rdata[5]  = {16'h0, mdio_wdata}; 
   assign mac_regs_rdata[6]  = {16'h0, mdio_rdata}; 
-  assign mac_regs_rdata[7]  = {27'h0, mdio_init, mdio_en, mdio_stat}; 
+  assign mac_regs_rdata[7]  = {26'h0, mdio_init, mdio_en, 3'h0, mdio_stat}; 
   assign mac_regs_rdata[8]  = {16'h0, tx_len_0}; 
   assign mac_regs_rdata[9]  = {30'h0, tx_err_0, tx_stat_0}; 
   assign mac_regs_rdata[10] = {16'h0, tx_len_1}; 
   assign mac_regs_rdata[11] = {30'h0, tx_err_1, tx_stat_1}; 
-  assign mac_regs_rdata[12] = {30'h0, rx_err_0,  rx_stat_0}; 
-  assign mac_regs_rdata[13] = {30'h0, rx_err_1,  rx_stat_1}; 
+  assign mac_regs_rdata[12] = {1'b0, rx_len_0[15:1], 14'h0, rx_err_0,  rx_stat_0}; 
+  assign mac_regs_rdata[13] = {1'b0, rx_len_1[15:1], 14'h0, rx_err_1,  rx_stat_1}; 
   assign mac_regs_rdata[14] = {31'h0, intr_enable}; 
   assign mac_regs_rdata[15] = {30'h0, rx_intr_stat, tx_intr_stat}; 
   assign mac_regs_rdata[16] = {rx_len_1, rx_len_0}; 
   assign mac_regs_rdata[17] = tx_dbg_info;
   assign mac_regs_rdata[18] = rx_dbg_info;
+  assign mac_regs_rdata[19] = rx_frame_cnt;
+  assign mac_regs_rdata[20] = rx_drop_cnt;
+  assign mac_regs_rdata[21] = rx_err_cnt;
 
-  for (genvar i = 19; i<32; i++) begin : g_unused_regs
+  for (genvar i = 22; i<32; i++) begin : g_unused_regs
     assign mac_regs_rdata[i] = 32'h0; 
   end
 
@@ -279,6 +285,7 @@ module eth_mac_lite (
 
   // active low tri-state OE
   assign phy_mdio_t =  mdio_stat & mdio_op && (mdio_cnt > 29);
+  assign mdio_en = 1'b1;
   
   always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
     if (~s_axi_aresetn) begin
@@ -287,7 +294,6 @@ module eth_mac_lite (
       mdio_op        <= 1'b0;
       mdio_wdata     <= 16'h0;
       mdio_stat      <= 1'b0;
-      mdio_en        <= 1'b1;
       mdio_init      <= 1'b1;
       mdio_cnt       <= 0;
       mdio_rdata     <= 0;
@@ -303,7 +309,6 @@ module eth_mac_lite (
         mdio_wdata <= reg_wdata[15:0];
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 7)) begin
-        mdio_en <= reg_wdata[3];
         if (mdio_en && reg_wdata[0]) mdio_stat <= 1'b1; 
       end else if (mdio_cnt >= MDIO_CNT_MAX) begin
         mdio_stat <= 1'b0;
@@ -521,16 +526,23 @@ module eth_mac_lite (
   //===================================
   // Rx MII driver 
   logic phy_dv_q;
+  logic [15:0] phy_nibl_cnt;
+  logic        flag_55;
 
   always @(negedge phy_rx_clk or negedge s_axi_aresetn) begin
     if (~s_axi_aresetn) begin
       rx_fifo_wvalid <= 1'b0;
-      rx_fifo_wdata  <= 5'h0;
+      rx_fifo_wdata  <= 6'h0;
       phy_dv_q       <= 1'b0;
+      phy_nibl_cnt   <= 0;
+      flag_55        <= 0;
     end else begin
       rx_fifo_wvalid <= phy_dv | phy_dv_q;   // write EOF to FIFO
-      rx_fifo_wdata  <= {phy_dv, phy_rx_data};
+      rx_fifo_wdata  <= {phy_rx_er, phy_dv, phy_rx_data};
       phy_dv_q       <= phy_dv;
+
+      if (phy_dv && (phy_nibl_cnt < 16'hffff)) phy_nibl_cnt <= phy_nibl_cnt+1; 
+      if (phy_dv && (phy_rx_data != 4'h5)) flag_55 <= 1'b1;
     end
   end
 
@@ -541,10 +553,13 @@ module eth_mac_lite (
   logic [11:0] rx_nibl_cnt;
   logic        cur_rx_buf;
   logic        rx_eof, rx_err_acc;
+  logic        rx_dv, rx_err;
 
-  assign rx_eof = rx_fifo_rvalid & ~rx_fifo_rdata[4];
+  assign rx_dv  = rx_fifo_rdata[4];
+  assign rx_err = rx_fifo_rdata[5];
+  assign rx_eof = rx_fifo_rvalid & ~rx_dv;
 
-  assign rx_dbg_info = {27'h0, cur_rx_buf, rx_fsm_q};
+  assign rx_dbg_info = {phy_nibl_cnt, flag_55, 10'h0, cur_rx_buf, rx_fsm_q};
 
   always_comb begin
     rx_fsm_d = rx_fsm_q;
@@ -579,6 +594,9 @@ module eth_mac_lite (
       rx_err_1        <= 1'b0;
       rx_len_0        <= 0;
       rx_len_1        <= 0;
+      rx_frame_cnt    <= 0;
+      rx_drop_cnt     <= 0;
+      rx_err_cnt      <= 0;
     end else begin
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 12) && reg_wdata[0]) 
         rx_stat_0 <= 1'b0;
@@ -619,8 +637,9 @@ module eth_mac_lite (
         endcase
       end
       
-      // this might result in an extra write when eof comes after 8x nibbiles.. but harmless?
-      rx_ram_p0_cs   <= (rx_fsm_q == RX_DATA) & rx_fifo_rvalid & ((rx_nibl_cnt[2:0] == 7) | rx_eof);
+      // write when collected 8 nibbles or an EOF comes and already collected at least 1 nibble
+      rx_ram_p0_cs   <= (rx_fsm_q == RX_DATA) & rx_fifo_rvalid & 
+                        ((rx_nibl_cnt[2:0] == 7) | (rx_eof & (rx_nibl_cnt[2:0]!=0)));
       rx_ram_p0_addr <= {cur_rx_buf, rx_nibl_cnt[11:3]};
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 15) && reg_wdata[1]) 
@@ -630,18 +649,27 @@ module eth_mac_lite (
 
       if (rx_fsm_q == RX_DONE)
         rx_err_acc <= 1'b0;
-      else if ((rx_fsm_q == RX_DATA) & phy_rx_er)
+      else if ((rx_fsm_q == RX_DATA) & rx_dv & rx_err)
         rx_err_acc <= 1'b1;
 
       if ((rx_fsm_q == RX_DONE) && ~cur_rx_buf) begin
         rx_err_0 <= rx_err_acc;
-        rx_len_0 <= rx_nibl_cnt[11:1];
+        rx_len_0 <= rx_nibl_cnt[11:0];
       end
 
       if ((rx_fsm_q == RX_DONE) && cur_rx_buf) begin
         rx_err_1 <= rx_err_acc;
-        rx_len_1 <= rx_nibl_cnt[11:1];
+        rx_len_1 <= rx_nibl_cnt[11:0];
       end
+
+      if (((rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR)) & rx_eof)
+        rx_frame_cnt <= rx_frame_cnt + 1;  
+
+      if ((rx_fsm_q == RX_OVR) & rx_eof)
+        rx_drop_cnt <= rx_drop_cnt + 1;  
+
+      if (((rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR)) & rx_err_acc & rx_eof)
+        rx_err_cnt <= rx_err_cnt + 1;  
     end
   end
 
@@ -717,7 +745,7 @@ module eth_mac_lite (
   );
 
   prim_fifo_async #(
-    .Width (5),
+    .Width (6),
     .Depth (16)
   ) u_rx_fifo (
     .clk_wr_i  (phy_rx_clk),
