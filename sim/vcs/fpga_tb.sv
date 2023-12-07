@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //`define BOOT_ADDR 32'h8000_0000
 `define BOOT_ADDR 32'h8000_0000
+`timescale 1ns/1ps
 
 module fpga_tb ();
   import ibex_pkg::*;
@@ -34,7 +35,7 @@ module fpga_tb ();
   .TDI_i          (1'b0),
   .TDO_io         (),
   .alive_o        (),
-  .TRSTn_mux_o    (),
+  .eth_alive_o    (),
   .txd_dvp_o      (),
   .rxd_dvp_i      (1'b1),
   .i2c0_scl_io    (),
@@ -141,6 +142,7 @@ module fpga_tb ();
 
   initial begin
     mdio_reg_wr = 1'b0;
+    
     while (1) begin
       @(posedge eth_mdc);
       if (mdio_active & mdio_we & ((mdio_cnt == 30))) begin
@@ -154,8 +156,13 @@ module fpga_tb ();
 
   end
 
-  always @(negedge eth_mdc) begin
-    if (mdio_reg_wr) mdio_regs[mdio_reg_addr] <= mdio_wdata;
+  always @(negedge eth_mdc, negedge rst_n) begin
+    int i;
+    if (~rst_n) begin
+      for (i=0; i<32; i++) mdio_regs[i] = i;
+    end else begin
+      if (mdio_reg_wr) mdio_regs[mdio_reg_addr] <= mdio_wdata;
+    end
   end
 
   always @(posedge eth_mdc, negedge rst_n)  begin

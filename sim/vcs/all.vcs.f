@@ -1,4 +1,3 @@
-+define+XILINX_PLL_MODEL__
 +define+RVFI
 +incdir+$DesignRoot/cheriot-ibex/rtl/
 +incdir+$DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl
@@ -117,4 +116,6 @@ $DesignRoot/src/msft_cheri_arty7/msftDvDebug_v1.sv
 $DesignRoot/src/msft_cheri_arty7/prim_flop_2sync.sv
 $DesignRoot/src/msft_cheri_arty7/eth_mac_lite.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvIp_cheri_arty7_fpga.sv
+./MMCME2_ADV.v
+./glbl.v
 ./fpga_tb.sv

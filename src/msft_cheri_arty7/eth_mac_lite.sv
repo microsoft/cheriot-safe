@@ -70,6 +70,58 @@ module eth_mac_lite (
   logic [5:0]  rx_fifo_wdata, rx_fifo_rdata;
   logic [4:0]  rx_fifo_wdepth, rx_fifo_rdepth;
   
+  logic [31:0] mac_regs_rdata[0:31];
+  logic        mac_reg_sel;
+  logic [31:0] scratch_regs[0:3];
+
+  logic [4:0]  mdio_phy_addr;
+  logic        mdio_op;
+  logic [4:0]  mdio_reg_addr;
+  logic [15:0] mdio_wdata, mdio_rdata;
+  logic        mdio_en, mdio_stat, mdio_init;
+
+  logic [15:0] tx_len_0, tx_len_1;
+  logic        tx_stat_0, tx_stat_1;
+  logic        tx_done_0, tx_done_1;
+  logic        tx_intr_stat;
+  logic        tx_err_0, tx_err_1;
+ 
+  logic [15:0] rx_len_0, rx_len_1;
+  logic        rx_stat_0, rx_stat_1;
+  logic        rx_err_0, rx_err_1;
+  logic        rx_intr_stat;
+  logic        intr_enable;
+  logic [31:0] tx_dbg_info, rx_dbg_info;
+  logic [31:0] rx_frame_cnt;
+  logic [31:0] rx_drop_cnt;
+  logic [31:0] rx_err_cnt;
+
+  logic [6:0]  mdio_cnt;
+
+  typedef enum logic [3:0] {TX_IDLE, TX_DATA, TX_DONE, TX_IFG} tx_fsm_t;
+  tx_fsm_t     tx_fsm_d, tx_fsm_q;
+
+  logic [11:0] tx_nibl_cnt, tx_nibl_cnt_max;
+  logic        cur_tx_buf;
+  logic        tx_nibl_req;
+  logic  [2:0] tx_nibl_cnt_lsb_q;
+  logic  [8:0] tx_ifg_cnt;
+  logic        tx_err_acc;
+
+  logic        phy_dv_q;
+  logic [31:0] phy_nibl_cnt;
+  logic  [3:0] phy_flags;
+
+  typedef enum logic [3:0] {RX_IDLE, RX_HUNT, RX_DATA, RX_DONE, RX_OVR} rx_fsm_t;
+  rx_fsm_t     rx_fsm_d, rx_fsm_q;
+
+  logic [11:0] rx_nibl_cnt;
+  logic        cur_rx_buf;
+  logic        rx_eof, rx_err_acc;
+  logic        rx_dv, rx_err;
+  logic [3:0]  rx_nibl;
+  logic [31:0] rx_fifo_rcnt;
+
 
   //===================================
   // AXI Read 
@@ -184,31 +236,6 @@ module eth_mac_lite (
   //===================================
   assign reg_wr_done = 1'b1;
 
-  logic [31:0] mac_regs_rdata[0:31];
-  logic        mac_reg_sel;
-  logic [31:0] scratch_regs[0:3];
-
-  logic [4:0]  mdio_phy_addr;
-  logic        mdio_op;
-  logic [4:0]  mdio_reg_addr;
-  logic [15:0] mdio_wdata, mdio_rdata;
-  logic        mdio_en, mdio_stat, mdio_init;
-
-  logic [15:0] tx_len_0, tx_len_1;
-  logic        tx_stat_0, tx_stat_1;
-  logic        tx_done_0, tx_done_1;
-  logic        tx_intr_stat;
-  logic        tx_err_0, tx_err_1;
- 
-  logic [15:0] rx_len_0, rx_len_1;
-  logic        rx_stat_0, rx_stat_1;
-  logic        rx_err_0, rx_err_1;
-  logic        rx_intr_stat;
-  logic        intr_enable;
-  logic [31:0] tx_dbg_info, rx_dbg_info;
-  logic [31:0] rx_frame_cnt;
-  logic [31:0] rx_drop_cnt;
-  logic [31:0] rx_err_cnt;
 
   always_comb begin
     case (reg_raddr[11:10])
@@ -230,7 +257,7 @@ module eth_mac_lite (
   assign mac_regs_rdata[4]  = {21'h0, mdio_op, mdio_phy_addr, mdio_reg_addr}; 
   assign mac_regs_rdata[5]  = {16'h0, mdio_wdata}; 
   assign mac_regs_rdata[6]  = {16'h0, mdio_rdata}; 
-  assign mac_regs_rdata[7]  = {26'h0, mdio_init, mdio_en, 3'h0, mdio_stat}; 
+  assign mac_regs_rdata[7]  = {27'h0, mdio_init, 3'h0, mdio_stat}; 
   assign mac_regs_rdata[8]  = {16'h0, tx_len_0}; 
   assign mac_regs_rdata[9]  = {30'h0, tx_err_0, tx_stat_0}; 
   assign mac_regs_rdata[10] = {16'h0, tx_len_1}; 
@@ -245,8 +272,11 @@ module eth_mac_lite (
   assign mac_regs_rdata[19] = rx_frame_cnt;
   assign mac_regs_rdata[20] = rx_drop_cnt;
   assign mac_regs_rdata[21] = rx_err_cnt;
+  assign mac_regs_rdata[22] = {16'h0, 3'h0, tx_fifo_wdepth, 3'h0, rx_fifo_rdepth};
+  assign mac_regs_rdata[23] = phy_nibl_cnt;
+  assign mac_regs_rdata[24] = rx_fifo_rcnt;
 
-  for (genvar i = 22; i<32; i++) begin : g_unused_regs
+  for (genvar i = 25; i<32; i++) begin : g_unused_regs
     assign mac_regs_rdata[i] = 32'h0; 
   end
 
@@ -274,17 +304,36 @@ module eth_mac_lite (
     end
   end
 
+  // phy reset generation (>1 us low pulse)
+  logic [7:0] phy_rst_cnt;
+
+  always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
+    if (~s_axi_aresetn) begin
+      phy_rst_n   <= 1'b1;
+      phy_rst_cnt <= 1'b1;
+    end else begin
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0) && reg_wdata[0])
+        phy_rst_cnt <= 1;
+      else if (phy_rst_cnt > 33)
+        phy_rst_cnt <= 0;
+      else if (phy_rst_cnt > 0)
+        phy_rst_cnt <= phy_rst_cnt + 1;
+
+      phy_rst_n = ~((phy_rst_cnt >=2) && (phy_rst_cnt <=32));
+    end
+  end
+
+
   //===================================
   // MDIO function
   //===================================
   localparam  MDIO_CNT_MAX = 65;
   localparam  MDIO_CNT_INIT_MAX = 125;
-  logic [6:0] mdio_cnt;
 
   // per MDIO spec, MDIO_IO is driven and sampled at falling edge of MDC by STA
 
-  // active low tri-state OE
-  assign phy_mdio_t =  mdio_stat & mdio_op && (mdio_cnt > 29);
+  // active low tri-state OE, pull high till midio_init is done
+  assign phy_mdio_t =  mdio_init | (mdio_stat & mdio_op && (mdio_cnt > 29));
   assign mdio_en = 1'b1;
   
   always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
@@ -318,11 +367,18 @@ module eth_mac_lite (
         mdio_init <= 1'b0;     // toggle mdc for 32 cycles after reset per MDIO spec
 
       // 0..65 state count (33 full cycles)
-      if (mdio_cnt >= MDIO_CNT_INIT_MAX)
+      // generated MDC both for 
+      //   - init case (kick of by a reg write) 
+      //   - mdio r/w case
+      if (mdio_init & mdio_cnt >= MDIO_CNT_INIT_MAX)
          mdio_cnt <= 0;
+      else if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 7) && reg_wdata[4] & mdio_init)
+         mdio_cnt <= 1;
+      else if (mdio_init & mdio_cnt > 0)
+         mdio_cnt <= mdio_cnt + 1;
       else if (mdio_stat & mdio_cnt >= MDIO_CNT_MAX)
          mdio_cnt <= 0;
-      else if (mdio_init | mdio_stat)
+      else if (mdio_stat)
          mdio_cnt <= mdio_cnt + 1;
 
       if (mdio_stat & mdio_cnt[0]) begin     // drive MDIO at falling edge of mdc
@@ -372,7 +428,6 @@ module eth_mac_lite (
   end
 
   assign phy_mdc     = mdio_cnt[0];  
-  assign phy_rst_n   = s_axi_aresetn;
 
   //===================================
   // Tx function
@@ -392,7 +447,7 @@ module eth_mac_lite (
     if (~s_axi_aresetn) begin
       tx_fifo_rready <= 1'b0;
     end else begin
-      if (tx_fifo_rdepth > 6)
+      if (tx_fifo_rdepth > 4)
         tx_fifo_rready <= 1'b1;
       else if (~tx_fifo_rvalid)
         tx_fifo_rready <= 1'b0;
@@ -400,16 +455,6 @@ module eth_mac_lite (
   end
   
   // Main Tx state machine
-  typedef enum logic [3:0] {TX_IDLE, TX_DATA, TX_DONE, TX_IFG} tx_fsm_t;
-  tx_fsm_t  tx_fsm_d, tx_fsm_q;
-
-  logic [11:0] tx_nibl_cnt, tx_nibl_cnt_max;
-  logic        cur_tx_buf;
-  logic        tx_nibl_req;
-  logic  [2:0] tx_nibl_cnt_lsb_q;
-  logic  [8:0] tx_ifg_cnt;
-  logic        tx_err_acc;
-
   assign tx_done_0 = (tx_fsm_q == TX_DONE) & ~cur_tx_buf;
   assign tx_done_1 = (tx_fsm_q == TX_DONE) & cur_tx_buf;
 
@@ -525,48 +570,48 @@ module eth_mac_lite (
   // Rx function
   //===================================
   // Rx MII driver 
-  logic phy_dv_q;
-  logic [15:0] phy_nibl_cnt;
-  logic        flag_55;
 
-  always @(negedge phy_rx_clk or negedge s_axi_aresetn) begin
+  // always @(negedge phy_rx_clk or negedge s_axi_aresetn) begin
+  always @(posedge phy_rx_clk or negedge s_axi_aresetn) begin
     if (~s_axi_aresetn) begin
       rx_fifo_wvalid <= 1'b0;
       rx_fifo_wdata  <= 6'h0;
       phy_dv_q       <= 1'b0;
       phy_nibl_cnt   <= 0;
-      flag_55        <= 0;
+      phy_flags      <= 4'h0;
     end else begin
       rx_fifo_wvalid <= phy_dv | phy_dv_q;   // write EOF to FIFO
       rx_fifo_wdata  <= {phy_rx_er, phy_dv, phy_rx_data};
       phy_dv_q       <= phy_dv;
 
-      if (phy_dv && (phy_nibl_cnt < 16'hffff)) phy_nibl_cnt <= phy_nibl_cnt+1; 
-      if (phy_dv && (phy_rx_data != 4'h5)) flag_55 <= 1'b1;
+      if (phy_dv && (phy_nibl_cnt < 32'hffff_ffff)) phy_nibl_cnt <= phy_nibl_cnt+1; 
+      if (phy_dv && (phy_rx_data != 4'h5)) phy_flags[0] <= 1'b1;
+      if (rx_fifo_wvalid & ~rx_fifo_wready) phy_flags[1] <= 1'b1;
     end
   end
 
   // Rx main function
-  typedef enum logic [3:0] {RX_IDLE, RX_DATA, RX_DONE, RX_OVR} rx_fsm_t;
-  rx_fsm_t  rx_fsm_d, rx_fsm_q;
+  assign rx_err  = rx_fifo_rdata[5];
+  assign rx_dv   = rx_fifo_rdata[4];
+  assign rx_nibl = rx_fifo_rdata[3:0];
 
-  logic [11:0] rx_nibl_cnt;
-  logic        cur_rx_buf;
-  logic        rx_eof, rx_err_acc;
-  logic        rx_dv, rx_err;
-
-  assign rx_dv  = rx_fifo_rdata[4];
-  assign rx_err = rx_fifo_rdata[5];
   assign rx_eof = rx_fifo_rvalid & ~rx_dv;
 
-  assign rx_dbg_info = {phy_nibl_cnt, flag_55, 10'h0, cur_rx_buf, rx_fsm_q};
+  assign rx_dbg_info = {16'h0, phy_flags, 7'h0, cur_rx_buf, rx_fsm_q};
+
+  logic [3:0] rx_prev_nibl;
 
   always_comb begin
     rx_fsm_d = rx_fsm_q;
     case (rx_fsm_q)
       RX_IDLE:
-        if (rx_fifo_rvalid & (~rx_stat_0 | ~rx_stat_1)) rx_fsm_d = RX_DATA;
+        if (rx_fifo_rvalid & (~rx_stat_0 | ~rx_stat_1)) rx_fsm_d = RX_HUNT;
         else if (rx_fifo_rvalid) rx_fsm_d = RX_OVR;
+      RX_HUNT:
+        if (rx_eof) 
+          rx_fsm_d = RX_DONE;
+        else if (rx_fifo_rvalid && (rx_nibl == 4'hd) && (rx_prev_nibl == 4'h5) & ~rx_err)
+          rx_fsm_d = RX_DATA;
       RX_DATA:
         if (rx_eof) rx_fsm_d = RX_DONE;
       RX_DONE:
@@ -585,6 +630,7 @@ module eth_mac_lite (
       rx_fsm_q        <= RX_IDLE;
       cur_rx_buf      <= 1'b0;
       rx_nibl_cnt     <= 0;
+      rx_prev_nibl    <= 4'h0;
       rx_ram_p0_wdata <= 32'h0;
       rx_ram_p0_cs    <= 1'b0;
       rx_ram_p0_addr  <= 0;
@@ -597,6 +643,7 @@ module eth_mac_lite (
       rx_frame_cnt    <= 0;
       rx_drop_cnt     <= 0;
       rx_err_cnt      <= 0;
+      rx_fifo_rcnt    <= 0;
     end else begin
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 12) && reg_wdata[0]) 
         rx_stat_0 <= 1'b0;
@@ -611,10 +658,15 @@ module eth_mac_lite (
       rx_fsm_q <= rx_fsm_d;
 
       if ((rx_fsm_q == RX_IDLE) & rx_fifo_rvalid & ~rx_stat_0)
-        cur_rx_buf   <= 1'b0;
+        cur_rx_buf <= 1'b0;
       else if ((rx_fsm_q == RX_IDLE) & rx_fifo_rvalid & ~rx_stat_1)
         cur_rx_buf <= 1'b1;
 
+      if (rx_fsm_q != RX_HUNT) 
+        rx_prev_nibl <= 4'h0;
+      else if (rx_fifo_rvalid & rx_fifo_rready)
+        rx_prev_nibl <= rx_nibl;
+        
       if (rx_fsm_q != RX_DATA) 
         rx_nibl_cnt  <= 0;
       else if ((rx_fsm_q == RX_DATA) & rx_fifo_rvalid & ~rx_eof)
@@ -623,16 +675,16 @@ module eth_mac_lite (
       if (rx_fsm_q != RX_DATA) 
         rx_ram_p0_wdata <= 32'h0;
       else if (rx_fifo_rvalid & ~rx_eof) begin
-        rx_ram_p0_wdata <= {rx_fifo_rdata[3:0], rx_ram_p0_wdata[31:4]};
+        rx_ram_p0_wdata <= {rx_nibl, rx_ram_p0_wdata[31:4]};
         case (rx_nibl_cnt[2:0])
-          0: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:4], rx_fifo_rdata[3:0]};
-          1: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:8], rx_fifo_rdata[3:0], rx_ram_p0_wdata[3:0]};
-          2: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:12], rx_fifo_rdata[3:0], rx_ram_p0_wdata[7:0]};
-          3: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:16], rx_fifo_rdata[3:0], rx_ram_p0_wdata[11:0]};
-          4: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:20], rx_fifo_rdata[3:0], rx_ram_p0_wdata[15:0]};
-          5: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:24], rx_fifo_rdata[3:0], rx_ram_p0_wdata[19:0]};
-          6: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:28], rx_fifo_rdata[3:0], rx_ram_p0_wdata[23:0]};
-          7: rx_ram_p0_wdata <= {rx_fifo_rdata[3:0], rx_ram_p0_wdata[27:0]};
+          0: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:4], rx_nibl};
+          1: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:8], rx_nibl, rx_ram_p0_wdata[3:0]};
+          2: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:12], rx_nibl, rx_ram_p0_wdata[7:0]};
+          3: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:16], rx_nibl, rx_ram_p0_wdata[11:0]};
+          4: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:20], rx_nibl, rx_ram_p0_wdata[15:0]};
+          5: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:24], rx_nibl, rx_ram_p0_wdata[19:0]};
+          6: rx_ram_p0_wdata <= {rx_ram_p0_wdata[31:28], rx_nibl, rx_ram_p0_wdata[23:0]};
+          7: rx_ram_p0_wdata <= {rx_nibl, rx_ram_p0_wdata[27:0]};
           default: rx_ram_p0_wdata <= 32'hffff_ffff;
         endcase
       end
@@ -670,10 +722,13 @@ module eth_mac_lite (
 
       if (((rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR)) & rx_err_acc & rx_eof)
         rx_err_cnt <= rx_err_cnt + 1;  
+
+      if (rx_fifo_rvalid && rx_fifo_rready && (rx_fifo_rcnt < 32'hffff_ffff)) 
+        rx_fifo_rcnt <= rx_fifo_rcnt+1; 
     end
   end
 
-  assign rx_fifo_rready = (rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR);
+  assign rx_fifo_rready = (rx_fsm_q == RX_HUNT) || (rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR);
   assign rx_ram_p0_we = 1'b1;
 
 
