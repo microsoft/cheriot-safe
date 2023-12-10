@@ -76,7 +76,7 @@ module msftDvIp_cheri0_subsystem #(
   input  [1:0]                               bresp_dmb_m_i,
   input                                      bvalid_dmb_m_i,
   output                                     bready_dmb_m_o,
-  input                                      eth_irq_i,
+  input  [1:0]                               eth_irq_i,
   output                                     txd_dvp_o,
   input                                      rxd_dvp_i,
   output [31:0]                              out0_o,

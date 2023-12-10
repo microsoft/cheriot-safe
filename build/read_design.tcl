@@ -115,5 +115,5 @@ read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvDebug_i2c_sub.sv 
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvDebug_apb_mux.sv ]
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvDebug_v1.sv ]
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/prim_flop_2sync.sv ]
-read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/eth_mac_lite.sv ]
+read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvIp_eth_mac_lite.sv ]
 read_verilog -sv [ glob $DesignRoot/src/msft_cheri_arty7/msftDvIp_cheri_arty7_fpga.sv ]

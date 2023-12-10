@@ -15,7 +15,7 @@ module msftDvIp_tcdev_wrapper (
   output logic [127:0] mmreg_corein_o,
 
   input  logic         irq_periph_i,
-  input  logic         irq_eth_i,
+  input  logic [1:0]   irq_eth_i,
 
   output logic         irq_external_o,
   output logic         irq_software_o,
@@ -28,7 +28,7 @@ module msftDvIp_tcdev_wrapper (
   logic        reg_plic_en_q, reg_mmreg_en_q, reg_clint_en_q;
   logic [31:0] rdata_plic, rdata_mmreg, rdata_clint;     
 
-  assign irq_to_plic = {29'h0, irq_eth_i, irq_periph_i, irq_tbre}; 
+  assign irq_to_plic = {28'h0, irq_eth_i, irq_periph_i, irq_tbre}; 
 
   assign reg_ready_o = 1'b1;
 

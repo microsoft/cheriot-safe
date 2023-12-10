@@ -114,7 +114,7 @@ $DesignRoot/src/msft_cheri_arty7/msftDvDebug_i2c_sub.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_apb_mux.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_v1.sv
 $DesignRoot/src/msft_cheri_arty7/prim_flop_2sync.sv
-$DesignRoot/src/msft_cheri_arty7/eth_mac_lite.sv
+$DesignRoot/src/msft_cheri_arty7/msftDvIp_eth_mac_lite.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvIp_cheri_arty7_fpga.sv
 ./MMCME2_ADV.v
 ./glbl.v

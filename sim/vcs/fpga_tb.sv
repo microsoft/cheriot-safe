@@ -1,7 +1,6 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 //`define BOOT_ADDR 32'h8000_0000
-`define BOOT_ADDR 32'h8000_0000
 `timescale 1ns/1ps
 
 module fpga_tb ();

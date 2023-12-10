@@ -50,6 +50,8 @@ module msftDvIp_cheri_arty7_fpga (
   output                                     eth_ref_clk_o
 );
 
+localparam UseEthMAC = 1'b1;
+
 // ==================================================
 // Internal Wire Signals
 // ==================================================
@@ -248,7 +250,8 @@ wire          phy_rx_clk;
 wire          phy_tx_clk;
 
 wire          clk_25m;
-wire          eth_irq;
+wire  [1:0]   eth_irq;
+wire          eth_rx_irq, eth_tx_irq;
 
 // ==================================================
 // Unconnected Pins
@@ -420,120 +423,108 @@ msftDvIp_cheri0_subsystem #(
 //  Inst Pre Code 
 // ==================================================
 
-// ==================================================
-// Instance external_ram
-// ==================================================
-// msftDvIp_axi_mem_bit_write #(
-//  .AXI_ADDR_WIDTH(64),
-//  .AXI_DATA_WIDTH(64),
-//  .AXI_ID_WIDTH(5),
-//  .AXI_LEN_WIDTH(8),
-//  .AXI_LOCK_WIDTH(2),
-//  .MEM_SIZE('h100)
-//  ) external_ram_i (
-//  .s_axi_clk                     ( sysclk                                   ),
-//  .s_axi_rst_n                   ( rstn                                     ),
-//  .s_axi_awid                    ( awid_dmb_m                               ),
-//  .s_axi_awaddr                  ( awaddr_dmb_m                             ),
-//  .s_axi_awlen                   ( awlen_dmb_m                              ),
-//  .s_axi_awsize                  ( awsize_dmb_m                             ),
-//  .s_axi_awburst                 ( awburst_dmb_m                            ),
-//  .s_axi_awlock                  ( awlock_dmb_m                             ),
-//  .s_axi_awcache                 ( awcache_dmb_m                            ),
-//  .s_axi_awprot                  ( awprot_dmb_m                             ),
-//  .s_axi_awqos                   ( awqos_dmb_m                              ),
-//  .s_axi_awvalid                 ( awvalid_dmb_m                            ),
-//  .s_axi_awready                 ( awready_dmb_m                            ),
-//  .s_axi_wdata                   ( wdata_dmb_m                              ),
-//  .s_axi_wstrb                   ( wstrb_dmb_m                              ),
-//  .s_axi_wlast                   ( wlast_dmb_m                              ),
-//  .s_axi_wvalid                  ( wvalid_dmb_m                             ),
-//  .s_axi_wready                  ( wready_dmb_m                             ),
-//  .s_axi_bready                  ( bready_dmb_m                             ),
-//  .s_axi_bid                     ( bid_dmb_m                                ),
-//  .s_axi_bresp                   ( bresp_dmb_m                              ),
-//  .s_axi_bvalid                  ( bvalid_dmb_m                             ),
-//  .s_axi_arid                    ( arid_dmb_m                               ),
-//  .s_axi_araddr                  ( araddr_dmb_m                             ),
-//  .s_axi_arlen                   ( arlen_dmb_m                              ),
-//  .s_axi_arsize                  ( arsize_dmb_m                             ),
-//  .s_axi_arburst                 ( arburst_dmb_m                            ),
-//  .s_axi_arlock                  ( arlock_dmb_m                             ),
-//  .s_axi_arcache                 ( arcache_dmb_m                            ),
-//  .s_axi_arprot                  ( arprot_dmb_m                             ),
-//  .s_axi_arqos                   ( arqos_dmb_m                              ),
-//  .s_axi_arvalid                 ( arvalid_dmb_m                            ),
-//  .s_axi_arready                 ( arready_dmb_m                            ),
-//  .s_axi_rready                  ( rready_dmb_m                             ),
-//  .s_axi_rid                     ( rid_dmb_m                                ),
-//  .s_axi_rdata                   ( rdata_dmb_m                              ),
-//  .s_axi_rresp                   ( rresp_dmb_m                              ),
-//  .s_axi_rlast                   ( rlast_dmb_m                              ),
-//  .s_axi_rvalid                  ( rvalid_dmb_m                             )
-//);
+if (~UseEthMAC) begin
+   //==================================================
+   //Instance external_ram
+   //==================================================
+   msftDvIp_axi_mem_bit_write #(
+    .AXI_ADDR_WIDTH(64),
+    .AXI_DATA_WIDTH(64),
+    .AXI_ID_WIDTH(5),
+    .AXI_LEN_WIDTH(8),
+    .AXI_LOCK_WIDTH(2),
+    .MEM_SIZE('h100)
+    ) external_ram_i (
+    .s_axi_clk                     ( sysclk                                   ),
+    .s_axi_rst_n                   ( rstn                                     ),
+    .s_axi_awid                    ( awid_dmb_m                               ),
+    .s_axi_awaddr                  ( awaddr_dmb_m                             ),
+    .s_axi_awlen                   ( awlen_dmb_m                              ),
+    .s_axi_awsize                  ( awsize_dmb_m                             ),
+    .s_axi_awburst                 ( awburst_dmb_m                            ),
+    .s_axi_awlock                  ( awlock_dmb_m                             ),
+    .s_axi_awcache                 ( awcache_dmb_m                            ),
+    .s_axi_awprot                  ( awprot_dmb_m                             ),
+    .s_axi_awqos                   ( awqos_dmb_m                              ),
+    .s_axi_awvalid                 ( awvalid_dmb_m                            ),
+    .s_axi_awready                 ( awready_dmb_m                            ),
+    .s_axi_wdata                   ( wdata_dmb_m                              ),
+    .s_axi_wstrb                   ( wstrb_dmb_m                              ),
+    .s_axi_wlast                   ( wlast_dmb_m                              ),
+    .s_axi_wvalid                  ( wvalid_dmb_m                             ),
+    .s_axi_wready                  ( wready_dmb_m                             ),
+    .s_axi_bready                  ( bready_dmb_m                             ),
+    .s_axi_bid                     ( bid_dmb_m                                ),
+    .s_axi_bresp                   ( bresp_dmb_m                              ),
+    .s_axi_bvalid                  ( bvalid_dmb_m                             ),
+    .s_axi_arid                    ( arid_dmb_m                               ),
+    .s_axi_araddr                  ( araddr_dmb_m                             ),
+    .s_axi_arlen                   ( arlen_dmb_m                              ),
+    .s_axi_arsize                  ( arsize_dmb_m                             ),
+    .s_axi_arburst                 ( arburst_dmb_m                            ),
+    .s_axi_arlock                  ( arlock_dmb_m                             ),
+    .s_axi_arcache                 ( arcache_dmb_m                            ),
+    .s_axi_arprot                  ( arprot_dmb_m                             ),
+    .s_axi_arqos                   ( arqos_dmb_m                              ),
+    .s_axi_arvalid                 ( arvalid_dmb_m                            ),
+    .s_axi_arready                 ( arready_dmb_m                            ),
+    .s_axi_rready                  ( rready_dmb_m                             ),
+    .s_axi_rid                     ( rid_dmb_m                                ),
+    .s_axi_rdata                   ( rdata_dmb_m                              ),
+    .s_axi_rresp                   ( rresp_dmb_m                              ),
+    .s_axi_rlast                   ( rlast_dmb_m                              ),
+    .s_axi_rvalid                  ( rvalid_dmb_m                             )
+  );
+end else begin
+  // ==================================================
+  // Instance axi_etherlite 
+  // ==================================================
+  msftDvIp_eth_mac_lite   eth_mac_i (
+    .s_axi_aclk                    ( sysclk        ),
+    .s_axi_aresetn                 ( rstn          ),
+    .eth_tx_irq                    ( eth_tx_irq),
+    .eth_rx_irq                    ( eth_rx_irq),
+    .s_axi_awaddr                  ( awaddr_dmb_m  ),
+    .s_axi_awvalid                 ( awvalid_dmb_m ),
+    .s_axi_awready                 ( awready_dmb_m ),
+    .s_axi_wdata                   ( wdata_dmb_m   ),
+    .s_axi_wstrb                   ( wstrb_dmb_m   ),
+    .s_axi_wvalid                  ( wvalid_dmb_m  ),
+    .s_axi_wready                  ( wready_dmb_m  ),
+    .s_axi_bready                  ( bready_dmb_m  ),
+    .s_axi_bresp                   ( bresp_dmb_m   ),
+    .s_axi_bvalid                  ( bvalid_dmb_m  ),
+    .s_axi_araddr                  ( araddr_dmb_m  ),
+    .s_axi_arvalid                 ( arvalid_dmb_m ),
+    .s_axi_arready                 ( arready_dmb_m ),
+    .s_axi_rready                  ( rready_dmb_m  ),
+    .s_axi_rdata                   ( rdata_dmb_m  ),
+    .s_axi_rresp                   ( rresp_dmb_m   ),
+    .s_axi_rvalid                  ( rvalid_dmb_m  ),
+    .phy_rx_clk                    ( phy_rx_clk    ),
+    .phy_dv                        ( phy_dv        ),
+    .phy_rx_data                   ( phy_rx_data   ),
+    //.phy_rx_clk                    ( phy_tx_clk    ),
+    //.phy_dv                        ( phy_tx_en        ),
+    //.phy_rx_data                   ( phy_tx_data   ),
+    .phy_crs                       ( phy_crs       ),
+    .phy_col                       ( phy_col       ),
+    .phy_rx_er                     ( phy_rx_er     ),
+    .phy_rst_n                     ( phy_rst_n     ),
+    .phy_tx_clk                    ( phy_tx_clk    ),
+    .phy_tx_en                     ( phy_tx_en     ),
+    .phy_tx_data                   ( phy_tx_data   ),
+    .phy_mdio_i                    ( phy_mdio_in   ),
+    .phy_mdio_o                    ( phy_mdio_out  ),                  
+    .phy_mdio_t                    ( phy_mdio_t    ),
+    .phy_mdc                       ( phy_mdc       )
+  );
 
-logic [31:0] rdata_dmb32;
-// ==================================================
-// Instance axi_etherlite 
-// ==================================================
-eth_mac_lite   eth_mac_i (
-  .s_axi_aclk                    ( sysclk        ),
-  .s_axi_aresetn                 ( rstn          ),
-  .eth_irq                       ( eth_irq),
-  .s_axi_awaddr                  ( awaddr_dmb_m  ),
-  .s_axi_awvalid                 ( awvalid_dmb_m ),
-  .s_axi_awready                 ( awready_dmb_m ),
-  .s_axi_wdata                   ( wdata_dmb_m   ),
-  .s_axi_wstrb                   ( wstrb_dmb_m   ),
-  .s_axi_wvalid                  ( wvalid_dmb_m  ),
-  .s_axi_wready                  ( wready_dmb_m  ),
-  .s_axi_bready                  ( bready_dmb_m  ),
-  .s_axi_bresp                   ( bresp_dmb_m   ),
-  .s_axi_bvalid                  ( bvalid_dmb_m  ),
-  .s_axi_araddr                  ( araddr_dmb_m  ),
-  .s_axi_arvalid                 ( arvalid_dmb_m ),
-  .s_axi_arready                 ( arready_dmb_m ),
-  .s_axi_rready                  ( rready_dmb_m  ),
-  .s_axi_rdata                   ( rdata_dmb32   ),
-  .s_axi_rresp                   ( rresp_dmb_m   ),
-  .s_axi_rvalid                  ( rvalid_dmb_m  ),
-  .phy_rx_clk                    ( phy_rx_clk    ),
-  .phy_dv                        ( phy_dv        ),
-  .phy_rx_data                   ( phy_rx_data   ),
-  //.phy_rx_clk                    ( phy_tx_clk    ),
-  //.phy_dv                        ( phy_tx_en        ),
-  //.phy_rx_data                   ( phy_tx_data   ),
-  .phy_crs                       ( phy_crs       ),
-  .phy_col                       ( phy_col       ),
-  .phy_rx_er                     ( phy_rx_er     ),
-  .phy_rst_n                     ( phy_rst_n     ),
-  .phy_tx_clk                    ( phy_tx_clk    ),
-  .phy_tx_en                     ( phy_tx_en     ),
-  .phy_tx_data                   ( phy_tx_data   ),
-  .phy_mdio_i                    ( phy_mdio_in   ),
-  .phy_mdio_o                    ( phy_mdio_out  ),                  
-  .phy_mdio_t                    ( phy_mdio_t    ),
-  .phy_mdc                       ( phy_mdc       )
-);
+  assign rlast_dmb_m = 1'b1;
+  assign rid_dmb_m = 0;
 
-assign rdata_dmb_m = {rdata_dmb32, rdata_dmb32};                                 
-assign rlast_dmb_m = 1'b1;
-assign rid_dmb_m = 0;
-
-//   phy_tx_clk : IN STD_LOGIC;
-//   phy_rx_clk : IN STD_LOGIC;
-//   phy_crs : IN STD_LOGIC;
-//   phy_dv : IN STD_LOGIC;
-//   phy_rx_data : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
-//   phy_col : IN STD_LOGIC;
-//   phy_rx_er : IN STD_LOGIC;
-//   phy_rst_n : OUT STD_LOGIC;
-//   phy_tx_en : OUT STD_LOGIC;
-//   phy_tx_data : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-//   phy_mdio_i : IN STD_LOGIC;
-//   phy_mdio_o : OUT STD_LOGIC;
-//   phy_mdio_t : OUT STD_LOGIC;
-//   phy_mdc : OUT STD_LOGIC
+  assign eth_irq = {eth_rx_irq, eth_tx_irq};
+end
 
 // ==================================================
 //  Inst Pre Code 

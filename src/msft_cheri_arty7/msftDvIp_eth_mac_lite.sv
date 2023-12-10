@@ -3,15 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-module eth_mac_lite (
+module msftDvIp_eth_mac_lite (
   input  logic        s_axi_aclk,
   input  logic        s_axi_aresetn,
-  output logic        eth_irq,
+  output logic        eth_tx_irq,
+  output logic        eth_rx_irq,
   input  logic [13:0] s_axi_awaddr,
   input  logic        s_axi_awvalid,
   output logic        s_axi_awready,
-  input  logic [31:0] s_axi_wdata,
-  input  logic [3:0]  s_axi_wstrb,
+  input  logic [63:0] s_axi_wdata,
+  input  logic [7:0]  s_axi_wstrb,
   input  logic        s_axi_wvalid,
   output logic        s_axi_wready,
   output logic [1:0]  s_axi_bresp,
@@ -20,7 +21,7 @@ module eth_mac_lite (
   input  logic [13:0] s_axi_araddr,
   input  logic        s_axi_arvalid,
   output logic        s_axi_arready,
-  output logic [31:0] s_axi_rdata,
+  output logic [63:0] s_axi_rdata,
   output logic [1:0]  s_axi_rresp,
   output logic        s_axi_rvalid,
   input  logic        s_axi_rready,
@@ -45,6 +46,8 @@ module eth_mac_lite (
 
   logic [ADDR_BUS_WIDTH-1:0]   reg_waddr, reg_raddr;
   logic [DATA_BUS_WIDTH-1:0]   reg_wdata, reg_rdata;
+
+  logic [3:0] reg_wstrb;
 
   logic        reg_rd_done, reg_wr_done;
   logic [1:0]  rdState, wrState;
@@ -72,7 +75,7 @@ module eth_mac_lite (
   
   logic [31:0] mac_regs_rdata[0:31];
   logic        mac_reg_sel;
-  logic [31:0] scratch_regs[0:3];
+  logic [31:0] scratch_reg;
 
   logic [4:0]  mdio_phy_addr;
   logic        mdio_op;
@@ -90,7 +93,7 @@ module eth_mac_lite (
   logic        rx_stat_0, rx_stat_1;
   logic        rx_err_0, rx_err_1;
   logic        rx_intr_stat;
-  logic        intr_enable;
+  logic [1:0]  intr_enable;
   logic [31:0] tx_dbg_info, rx_dbg_info;
   logic [31:0] rx_frame_cnt;
   logic [31:0] rx_drop_cnt;
@@ -98,12 +101,12 @@ module eth_mac_lite (
 
   logic [6:0]  mdio_cnt;
 
-  typedef enum logic [3:0] {TX_IDLE, TX_DATA, TX_DONE, TX_IFG} tx_fsm_t;
+  typedef enum logic [3:0] {TX_IDLE, TX_PRE, TX_DATA, TX_WAIT1, TX_FCS, TX_DONE, TX_IFG} tx_fsm_t;
   tx_fsm_t     tx_fsm_d, tx_fsm_q;
 
   logic [11:0] tx_nibl_cnt, tx_nibl_cnt_max;
   logic        cur_tx_buf;
-  logic        tx_nibl_req;
+  logic        tx_nibl_req, tx_nibl_req_q;
   logic  [2:0] tx_nibl_cnt_lsb_q;
   logic  [8:0] tx_ifg_cnt;
   logic        tx_err_acc;
@@ -122,6 +125,19 @@ module eth_mac_lite (
   logic [3:0]  rx_nibl;
   logic [31:0] rx_fifo_rcnt;
 
+  logic        tx_raw_mode, rx_fcs_filt;
+  logic [3:0]  rx_addr_filt;
+  logic [47:0] rx_sta_addr;
+
+  localparam [31:0] crc32_tbl[16] = {32'h00000000, 32'h1db71064, 32'h3b6e20c8, 32'h26d930ac,
+                                     32'h76dc4190, 32'h6b6b51f4, 32'h4db26158, 32'h5005713c,
+                                     32'hedb88320, 32'hf00f9344, 32'hd6d6a3e8, 32'hcb61b38c,
+                                     32'h9b64c2b0, 32'h86d3d2d4, 32'ha00ae278, 32'hbdbdf21c
+                                    };
+  logic [31:0] tx_fcs32, rx_fcs32;
+
+
+  logic [31:0] axi_rdata32;
 
   //===================================
   // AXI Read 
@@ -131,6 +147,8 @@ module eth_mac_lite (
   localparam AXI_RD_RESP     = 2;
 
   assign reg_rd_req = (rdState == AXI_RD_REQ);
+  assign s_axi_rdata = {axi_rdata32, axi_rdata32};
+
   always @(posedge s_axi_aclk or negedge s_axi_aresetn)
   begin
     if(!s_axi_aresetn) begin
@@ -139,7 +157,7 @@ module eth_mac_lite (
       s_axi_rvalid  <= 1'b0;
       s_axi_rresp   <= 2'h0;
       rdState       <= AXI_RD_IDLE;
-      s_axi_rdata   <= 0;
+      axi_rdata32   <= 0;
     end else begin
       case (rdState)
         AXI_RD_IDLE: begin
@@ -154,7 +172,7 @@ module eth_mac_lite (
           if(reg_rd_done) begin
             s_axi_rvalid <= 1'b1;
             s_axi_rresp  <= {1'b0, 1'b0};
-            s_axi_rdata  <= reg_rdata;
+            axi_rdata32  <= reg_rdata;
             rdState      <= AXI_RD_RESP; 
           end
         end
@@ -185,6 +203,7 @@ module eth_mac_lite (
     if(!s_axi_aresetn) begin
       reg_waddr     <= {DATA_BUS_WIDTH{1'b0}};
       reg_wdata     <= {DATA_BUS_WIDTH{1'b0}};
+      reg_wstrb     <= 4'h0;
       s_axi_awready <= 1'b1;
       s_axi_wready  <= 1'b1;
       s_axi_bresp   <= 2'h0;
@@ -197,7 +216,8 @@ module eth_mac_lite (
             reg_waddr     <= s_axi_awaddr[13:2];
             s_axi_awready <= 1'b0;
             if(s_axi_wvalid) begin
-              reg_wdata    <= s_axi_wdata;
+              reg_wdata    <= s_axi_awaddr[2] ? s_axi_wdata[63:32] : s_axi_wdata[31:0];
+              reg_wstrb    <= s_axi_awaddr[2] ? s_axi_wstrb[7:4] : s_axi_wstrb[3:0];
               s_axi_wready <= 1'b0;
               wrState      <= AXI_WR_REQ;
             end else begin
@@ -207,8 +227,9 @@ module eth_mac_lite (
         end
         AXI_WDATA_WAIT: begin
           if(s_axi_wvalid) begin
-            reg_wdata  <= s_axi_wdata;
-            wrState <= AXI_WR_REQ;
+            reg_wdata    <= reg_waddr[0] ? s_axi_wdata[63:32] : s_axi_wdata[31:0];
+            reg_wstrb    <= reg_waddr[0] ? s_axi_wstrb[7:4] : s_axi_wstrb[3:0];
+            wrState    <= AXI_WR_REQ;
           end
         end
         AXI_WR_REQ: begin
@@ -250,10 +271,11 @@ module eth_mac_lite (
     endcase
   end
 
-  assign mac_regs_rdata[0]  = scratch_regs[0]; 
-  assign mac_regs_rdata[1]  = scratch_regs[1]; 
-  assign mac_regs_rdata[2]  = scratch_regs[2]; 
-  assign mac_regs_rdata[3]  = scratch_regs[3]; 
+  // Bit 0 of reg[0] controls phy reset 
+  assign mac_regs_rdata[0]  = {16'h1234, 3'h0, rx_fcs_filt, rx_addr_filt, 3'h0, tx_raw_mode, 4'h0};  
+  assign mac_regs_rdata[1]  = {rx_sta_addr[31:0]};
+  assign mac_regs_rdata[2]  = {16'h0, rx_sta_addr[47:32]}; 
+  assign mac_regs_rdata[3]  = scratch_reg; 
   assign mac_regs_rdata[4]  = {21'h0, mdio_op, mdio_phy_addr, mdio_reg_addr}; 
   assign mac_regs_rdata[5]  = {16'h0, mdio_wdata}; 
   assign mac_regs_rdata[6]  = {16'h0, mdio_rdata}; 
@@ -264,7 +286,7 @@ module eth_mac_lite (
   assign mac_regs_rdata[11] = {30'h0, tx_err_1, tx_stat_1}; 
   assign mac_regs_rdata[12] = {1'b0, rx_len_0[15:1], 14'h0, rx_err_0,  rx_stat_0}; 
   assign mac_regs_rdata[13] = {1'b0, rx_len_1[15:1], 14'h0, rx_err_1,  rx_stat_1}; 
-  assign mac_regs_rdata[14] = {31'h0, intr_enable}; 
+  assign mac_regs_rdata[14] = {30'h0, intr_enable}; 
   assign mac_regs_rdata[15] = {30'h0, rx_intr_stat, tx_intr_stat}; 
   assign mac_regs_rdata[16] = {rx_len_1, rx_len_0}; 
   assign mac_regs_rdata[17] = tx_dbg_info;
@@ -282,23 +304,41 @@ module eth_mac_lite (
 
   assign mac_reg_sel = (reg_waddr[11:5] == 0);
 
-  assign eth_irq = intr_enable & (rx_intr_stat | tx_intr_stat);
+  assign eth_tx_irq = intr_enable[0] & tx_intr_stat;
+  assign eth_rx_irq = intr_enable[1] & rx_intr_stat;
 
   always @(posedge s_axi_aclk or negedge s_axi_aresetn)
   begin
     int i;
     if (~s_axi_aresetn) begin
-      reg_rd_done    <= 1'b0;
-      intr_enable    <= 1'b0;
-      for (i = 0; i < 4; i++) scratch_regs[i] <= 32'h0;
+      tx_raw_mode   <= 1'b0;
+      rx_addr_filt  <= 4'hf;
+      rx_fcs_filt   <= 1'b1;
+      rx_sta_addr   <= 48'h0;
+      reg_rd_done   <= 1'b0;
+      intr_enable   <= 2'b0;
+      scratch_reg   <= 32'h0;
     end else begin
-      for (i = 0; i < 4; i++) begin
-        if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == i)) 
-          scratch_regs[i] <= reg_wdata;
-      end
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
+        tx_raw_mode <= reg_wdata[4];
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
+        rx_addr_filt <= reg_wdata[11:8];
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
+        rx_fcs_filt <= reg_wdata[12];
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 1)) 
+        rx_sta_addr[31:0] <= reg_wdata[31:0];
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 2)) 
+        rx_sta_addr[47:32] <= reg_wdata[15:0];
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 3)) 
+        scratch_reg <= reg_wdata;
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 14)) 
-        intr_enable = reg_wdata[0];
+        intr_enable = reg_wdata[1:0];
 
       reg_rd_done <= reg_rd_req;
     end
@@ -322,7 +362,6 @@ module eth_mac_lite (
       phy_rst_n = ~((phy_rst_cnt >=2) && (phy_rst_cnt <=32));
     end
   end
-
 
   //===================================
   // MDIO function
@@ -439,6 +478,10 @@ module eth_mac_lite (
   // inter-frame gap 9.6us (10Base-T) in 20MHz cycles, plus time to flush 12 nibbles in the tx FIFO
   localparam TX_IFG_MAX = 300; 
 
+  logic [4:0] tx_hwdata_cnt;
+  logic       tx_hwdata_req;
+  logic [1:0] phy_col_q;
+
   // Tx MII driver 
   assign phy_tx_en   = tx_fifo_rvalid & tx_fifo_rready;
   assign phy_tx_data = tx_fifo_rdata;
@@ -466,13 +509,27 @@ module eth_mac_lite (
 
   assign tx_dbg_info = {27'h0, cur_tx_buf, tx_fsm_q};
 
+
+  assign tx_hwdata_req   = ~tx_raw_mode && ((tx_fsm_q == TX_PRE) || (tx_fsm_q == TX_FCS)) && 
+                           (tx_fifo_wdepth < 12);
+
+  assign tx_fifo_wvalid  = tx_nibl_req_q | tx_hwdata_req;
+
   always_comb begin
     tx_fsm_d = tx_fsm_q;
     case (tx_fsm_q)
       TX_IDLE:
-        if ((tx_stat_0 | tx_stat_1) & ~phy_crs) tx_fsm_d = TX_DATA;
+        if ((tx_stat_0 | tx_stat_1) & ~phy_crs) tx_fsm_d = TX_PRE;
+      TX_PRE:
+        if (tx_raw_mode) tx_fsm_d = TX_DATA;
+        else if ((tx_hwdata_cnt >= 15) && tx_hwdata_req) tx_fsm_d = TX_DATA;
       TX_DATA:
-        if ((tx_nibl_cnt >= tx_nibl_cnt_max) && tx_nibl_req) tx_fsm_d = TX_DONE;
+        if ((tx_nibl_cnt >= tx_nibl_cnt_max) && tx_nibl_req) tx_fsm_d = TX_WAIT1;
+      TX_WAIT1:   // this state is just to make sure ram_rdata comes back so FCS can be updated
+        tx_fsm_d = TX_FCS;
+      TX_FCS:
+        if (tx_raw_mode) tx_fsm_d = TX_DONE;
+        else if ((tx_hwdata_cnt >= 7) && tx_hwdata_req) tx_fsm_d = TX_DONE;
       TX_DONE:
         tx_fsm_d = TX_IFG;
       TX_IFG:         // inter-frame gap
@@ -481,17 +538,41 @@ module eth_mac_lite (
         tx_fsm_d = TX_IDLE;
     endcase
 
-    case (tx_nibl_cnt_lsb_q) 
-      0: tx_fifo_wdata = tx_ram_p1_rdata[3:0];
-      1: tx_fifo_wdata = tx_ram_p1_rdata[7:4];
-      2: tx_fifo_wdata = tx_ram_p1_rdata[11:8];
-      3: tx_fifo_wdata = tx_ram_p1_rdata[15:12];
-      4: tx_fifo_wdata = tx_ram_p1_rdata[19:16];
-      5: tx_fifo_wdata = tx_ram_p1_rdata[23:20];
-      6: tx_fifo_wdata = tx_ram_p1_rdata[27:24];
-      7: tx_fifo_wdata = tx_ram_p1_rdata[31:28];
-      default: tx_fifo_wdata = 0;
-    endcase
+    if (tx_nibl_req_q) begin
+      case (tx_nibl_cnt_lsb_q) 
+        0: tx_fifo_wdata = tx_ram_p1_rdata[3:0];   
+        1: tx_fifo_wdata = tx_ram_p1_rdata[7:4];
+        2: tx_fifo_wdata = tx_ram_p1_rdata[11:8];
+        3: tx_fifo_wdata = tx_ram_p1_rdata[15:12];
+        4: tx_fifo_wdata = tx_ram_p1_rdata[19:16];
+        5: tx_fifo_wdata = tx_ram_p1_rdata[23:20];
+        6: tx_fifo_wdata = tx_ram_p1_rdata[27:24];
+        7: tx_fifo_wdata = tx_ram_p1_rdata[31:28];
+        default: tx_fifo_wdata = 0;
+      endcase
+    end else if (tx_hwdata_req) begin
+      if ((tx_fsm_q == TX_PRE) && (tx_hwdata_cnt < 15)) begin
+        tx_fifo_wdata = 4'h5;
+      end else if ((tx_fsm_q == TX_PRE) && (tx_hwdata_cnt == 15)) begin
+        tx_fifo_wdata = 4'hd;
+      end else if (tx_fsm_q == TX_FCS) begin
+        case (tx_hwdata_cnt[2:0]) 
+          0: tx_fifo_wdata = ~tx_fcs32[3:0];  
+          1: tx_fifo_wdata = ~tx_fcs32[7:4];
+          2: tx_fifo_wdata = ~tx_fcs32[11:8];
+          3: tx_fifo_wdata = ~tx_fcs32[15:12];
+          4: tx_fifo_wdata = ~tx_fcs32[19:16];
+          5: tx_fifo_wdata = ~tx_fcs32[23:20];
+          6: tx_fifo_wdata = ~tx_fcs32[27:24];
+          7: tx_fifo_wdata = ~tx_fcs32[31:28];
+          default: tx_fifo_wdata = 0;
+        endcase
+      end else begin
+        tx_fifo_wdata = 0;
+      end
+    end else begin
+      tx_fifo_wdata = 0;
+    end
   end
 
   always @(posedge s_axi_aclk or negedge s_axi_aresetn)
@@ -503,14 +584,17 @@ module eth_mac_lite (
       tx_stat_1         <= 1'b0;
       tx_fsm_q          <= TX_IDLE;
       cur_tx_buf        <= 1'b0;
+      tx_nibl_req_q     <= 1'b0;
       tx_nibl_cnt       <= 0;
       tx_nibl_cnt_lsb_q <= 0; 
-      tx_fifo_wvalid    <= 1'b0;
+      tx_hwdata_cnt     <= 0;
       tx_ifg_cnt        <= 0;
       tx_intr_stat      <= 1'b0;
+      phy_col_q         <= 2'h0;
       tx_err_acc        <= 1'b0;
       tx_err_0          <= 1'b0;
       tx_err_1          <= 1'b0;
+      tx_fcs32          <= 32'h0;
     end else begin  
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 8)) 
         tx_len_0 <= reg_wdata[15:0];
@@ -538,9 +622,14 @@ module eth_mac_lite (
         tx_nibl_cnt  <= 0;
       else if (tx_nibl_req)
         tx_nibl_cnt <= tx_nibl_cnt + 1;
+
+      if ((tx_fsm_q != TX_PRE) && (tx_fsm_q != TX_FCS)) 
+        tx_hwdata_cnt  <= 0;
+      else if (tx_hwdata_req)
+        tx_hwdata_cnt <= tx_hwdata_cnt + 1;
   
+      tx_nibl_req_q     <= tx_nibl_req;         // to align with ram rdata
       tx_nibl_cnt_lsb_q <= tx_nibl_cnt[2:0];
-      tx_fifo_wvalid    <= tx_nibl_req;
 
       if (tx_fsm_q == TX_IFG)
         tx_ifg_cnt <= tx_ifg_cnt + 1;
@@ -552,16 +641,28 @@ module eth_mac_lite (
       else if (tx_fsm_q == TX_DONE)
         tx_intr_stat <= 1'b1;
 
+      phy_col_q <= {phy_col_q[0], phy_col};     // double sync for CDC
+
       if (tx_fsm_q == TX_DONE)
         tx_err_acc <= 1'b0;
-      else if ((tx_fsm_q == TX_DATA) & phy_col)
+      else if ((tx_fsm_q == TX_DATA) & phy_col_q[2])
         tx_err_acc <= 1'b1;
 
       if ((tx_fsm_q == TX_DONE) && ~cur_tx_buf)
-        tx_err_0 <= tx_err_acc;
+        tx_err_0 <= tx_err_acc;              // transfer to MAC registers for sw read later
 
       if ((tx_fsm_q == TX_DONE) && cur_tx_buf)
         tx_err_1 <= tx_err_acc;
+
+      // crc calculation
+      // x = mac_data[i];
+      // x1 = (fcs32 ^x)&0xf;
+      // fcs32 = (fcs32 >> 4) ^ crc32_tbl[x1];
+ 
+      if (tx_fsm_q == TX_PRE)
+        tx_fcs32 <= 32'hffff_ffff;      // initial value
+      else if (tx_nibl_req_q)
+        tx_fcs32 <= crc32_tbl[tx_fcs32[3:0]^tx_fifo_wdata] ^ {4'h0, tx_fcs32[31:4]};
     end
   end
 
@@ -591,15 +692,29 @@ module eth_mac_lite (
   end
 
   // Rx main function
+  localparam bit [31:0] FCS_VD = 32'h2144df1c;
+
+  logic [3:0] rx_addr_match_q, rx_addr_match_d;
+  logic [3:0] rx_prev_nibl;
+  logic [3:0] rx_sta_nibls[16];
+  logic       rx_frame_good;
+  logic       rx_fcs_err;
+
+  localparam [3:0] ipv4_mcast_nibls[8] = {4'h1, 4'h0, 4'h0, 4'h0, 4'he, 4'h5, 4'h0, 4'h0};
+
   assign rx_err  = rx_fifo_rdata[5];
   assign rx_dv   = rx_fifo_rdata[4];
   assign rx_nibl = rx_fifo_rdata[3:0];
+  assign rx_eof  = rx_fifo_rvalid & ~rx_dv;
 
-  assign rx_eof = rx_fifo_rvalid & ~rx_dv;
+  assign rx_fifo_rready = (rx_fsm_q == RX_HUNT) || (rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR);
+  assign rx_ram_p0_we   = 1'b1;
+
+  // determine whether to drop the packet
+  assign rx_fcs_err    = (rx_fsm_q == RX_DONE) & ((~rx_fcs32)!=FCS_VD);
+  assign rx_frame_good = (rx_fsm_q == RX_DONE) & (|rx_addr_match_q) & ~(rx_fcs_filt & rx_fcs_err);
 
   assign rx_dbg_info = {16'h0, phy_flags, 7'h0, cur_rx_buf, rx_fsm_q};
-
-  logic [3:0] rx_prev_nibl;
 
   always_comb begin
     rx_fsm_d = rx_fsm_q;
@@ -623,6 +738,49 @@ module eth_mac_lite (
     endcase
   end
 
+  // MAC rx address filtering 
+  assign rx_sta_nibls[0]  = rx_sta_addr[43:40];
+  assign rx_sta_nibls[1]  = rx_sta_addr[47:44];
+  assign rx_sta_nibls[2]  = rx_sta_addr[35:32];
+  assign rx_sta_nibls[3]  = rx_sta_addr[39:36];
+  assign rx_sta_nibls[4]  = rx_sta_addr[27:24];
+  assign rx_sta_nibls[5]  = rx_sta_addr[31:28];
+  assign rx_sta_nibls[6]  = rx_sta_addr[19:16];
+  assign rx_sta_nibls[7]  = rx_sta_addr[23:20];
+  assign rx_sta_nibls[8]  = rx_sta_addr[11:8];
+  assign rx_sta_nibls[9]  = rx_sta_addr[15:12];
+  assign rx_sta_nibls[10] = rx_sta_addr[3:0];
+  assign rx_sta_nibls[11] = rx_sta_addr[7:4];
+  assign rx_sta_nibls[12] = 4'h0;
+  assign rx_sta_nibls[13] = 4'h0;
+  assign rx_sta_nibls[14] = 4'h0;
+  assign rx_sta_nibls[15] = 4'h0;
+
+  always_comb begin
+    rx_addr_match_d = rx_addr_match_q;
+
+    if (rx_fsm_q == RX_HUNT) begin
+      rx_addr_match_d = 4'hf;
+    end else if ((rx_fsm_q == RX_DATA) & rx_fifo_rvalid & rx_dv) begin
+      // match 0: individual STA MAC address
+      if (rx_addr_filt[0] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 11)  && 
+          (rx_nibl != rx_sta_nibls[rx_nibl_cnt[3:0]]))
+        rx_addr_match_d[0] = 1'b0;       
+
+      // match 1: broadcast MAC address (all 1s)
+      if (rx_addr_filt[1] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 11)  && (rx_nibl != 4'hf))
+        rx_addr_match_d[1] = 1'b0;       
+
+      // match 2: IP v4 multicast address
+      if (rx_addr_filt[2] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 5)  && (rx_nibl != ipv4_mcast_nibls[rx_nibl_cnt[2:0]]))
+        rx_addr_match_d[2] = 1'b0;       
+
+      // match 3: IP v6 multicast address. we only check the prefix (0x3333)
+      if (rx_addr_filt[3] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 3)  && (rx_nibl != 4'h3))
+        rx_addr_match_d[3] = 1'b0;       
+    end 
+  end
+
   always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
     if (~s_axi_aresetn) begin
       rx_stat_0       <= 1'b0;
@@ -634,6 +792,8 @@ module eth_mac_lite (
       rx_ram_p0_wdata <= 32'h0;
       rx_ram_p0_cs    <= 1'b0;
       rx_ram_p0_addr  <= 0;
+      rx_addr_match_q <= 4'h0;
+      rx_fcs32        <= 32'h0;
       rx_intr_stat    <= 1'b0;
       rx_err_acc      <= 1'b0;
       rx_err_0        <= 1'b0;
@@ -647,12 +807,12 @@ module eth_mac_lite (
     end else begin
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 12) && reg_wdata[0]) 
         rx_stat_0 <= 1'b0;
-      else if ((rx_fsm_q == RX_DONE) & ~cur_rx_buf)
+      else if ((rx_fsm_q == RX_DONE) & ~cur_rx_buf & rx_frame_good)
         rx_stat_0 <= 1'b1;
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 13) && reg_wdata[0]) 
         rx_stat_1 <= 1'b0;
-      else if ((rx_fsm_q == RX_DONE) & cur_rx_buf)
+      else if ((rx_fsm_q == RX_DONE) & cur_rx_buf & rx_frame_good)
         rx_stat_1 <= 1'b1;
        
       rx_fsm_q <= rx_fsm_d;
@@ -694,6 +854,13 @@ module eth_mac_lite (
                         ((rx_nibl_cnt[2:0] == 7) | (rx_eof & (rx_nibl_cnt[2:0]!=0)));
       rx_ram_p0_addr <= {cur_rx_buf, rx_nibl_cnt[11:3]};
 
+      rx_addr_match_q <= rx_addr_match_d;
+
+      if (tx_fsm_q == RX_HUNT)
+        rx_fcs32 <= 32'hffff_ffff;      // initial value
+      else if ((rx_fsm_q == RX_DATA) & rx_fifo_rvalid & rx_dv)
+        rx_fcs32 <= crc32_tbl[rx_fcs32[3:0]^rx_nibl] ^ {4'h0, rx_fcs32[31:4]};
+
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 15) && reg_wdata[1]) 
         rx_intr_stat <= 1'b0;
       else if (rx_fsm_q == RX_DONE)
@@ -705,12 +872,12 @@ module eth_mac_lite (
         rx_err_acc <= 1'b1;
 
       if ((rx_fsm_q == RX_DONE) && ~cur_rx_buf) begin
-        rx_err_0 <= rx_err_acc;
+        rx_err_0 <= rx_err_acc | rx_fcs_err;
         rx_len_0 <= rx_nibl_cnt[11:0];
       end
 
       if ((rx_fsm_q == RX_DONE) && cur_rx_buf) begin
-        rx_err_1 <= rx_err_acc;
+        rx_err_1 <= rx_err_acc | rx_fcs_err;
         rx_len_1 <= rx_nibl_cnt[11:0];
       end
 
@@ -727,9 +894,6 @@ module eth_mac_lite (
         rx_fifo_rcnt <= rx_fifo_rcnt+1; 
     end
   end
-
-  assign rx_fifo_rready = (rx_fsm_q == RX_HUNT) || (rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR);
-  assign rx_ram_p0_we = 1'b1;
 
 
   //===================================
@@ -753,7 +917,7 @@ module eth_mac_lite (
     .addr  (tx_ram_p0_addr),
     .din   (tx_ram_p0_wdata),
     .we    (tx_ram_p0_we),
-    .wstrb ({32{1'b1}}),
+    .wstrb ({{8{reg_wstrb[3]}}, {8{reg_wstrb[2]}}, {8{reg_wstrb[1]}}, {8{reg_wstrb[0]}}}),
     .ready (),
     .cs2   (tx_ram_p1_cs),
     .addr2 (tx_ram_p1_addr),
