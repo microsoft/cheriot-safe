@@ -856,7 +856,7 @@ module msftDvIp_eth_mac_lite (
 
       rx_addr_match_q <= rx_addr_match_d;
 
-      if (tx_fsm_q == RX_HUNT)
+      if (rx_fsm_q == RX_HUNT)
         rx_fcs32 <= 32'hffff_ffff;      // initial value
       else if ((rx_fsm_q == RX_DATA) & rx_fifo_rvalid & rx_dv)
         rx_fcs32 <= crc32_tbl[rx_fcs32[3:0]^rx_nibl] ^ {4'h0, rx_fcs32[31:4]};
