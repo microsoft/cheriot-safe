@@ -1144,7 +1144,7 @@ msftDvIp_periph_wrapper_v0 #(
   .TDOoen_d_o                    ( TDOoen_d                                 ),
   .jtag_mux_sel_o                ( jtag_mux_sel                             ),
   .irqs_ext_i                    ( irqs_ext                                 ),
-  .irq_o                         ( irq                                      ),
+  .irq_o                         ( irq_periph                               ),
   .fiq_o                         ( fiq                                      ),
   .gpio0_in_i                    ( gpio0_in                                 ),
   .gpio0_out_o                   ( gpio0_out                                ),
@@ -1165,6 +1165,7 @@ msftDvIp_periph_wrapper_v0 #(
   .dw_oen                        ( dw_oen                                   )
 );
 
+assign irqs_ext = 0;
 
 // ==================================================
 //  Inst Pre Code 
@@ -1340,7 +1341,7 @@ msftDvIp_tcdev_wrapper msftDvIp_tcdev_wrapper_i (
   .mmreg_coreout_i               ( mmreg_coreout                            ),
   .mmreg_corein_o                ( mmreg_corein                             ),
   .irq_periph_i                  ( irq_periph                               ),
-  .irq_eth_i                     ( eth_irq                                  ),
+  .irq_eth_i                     ( eth_irq_i                                ),
   .irq_external_o                ( irq_external                             ),
   .irq_software_o                ( irq_software                             ),
   .irq_timer_o                   ( irq_timer                                )
