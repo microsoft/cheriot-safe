@@ -13,6 +13,7 @@ import
 out
 *.swo
 *.swp
+.nfs*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -403,4 +404,5 @@ FodyWeavers.xsd
 
 *.jou
 build/RUN*/*
+build/.*
 

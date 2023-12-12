@@ -1,11 +1,10 @@
 (* CORE_GENERATION_INFO = "clock_generator,clk_wiz_v3_4,{component_name=clock_generator,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=MMCM_ADV,num_out_clk=6,clkin1_period=10.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=false,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=MANUAL,manual_override=false}" *)
 
-module msftDvIp_mmcm_arty7_0
+module msftDvIp_mmcm_arty7_1
  (// Clock in ports
   input         sysClk_i,
   // Clock out ports
-  output        clk20Mhz_o,
-  output        clk200Mhz_o,
+  output        clk25Mhz_o,
   // Status and control signals
   input         RESETn_i
  );
@@ -38,27 +37,20 @@ module msftDvIp_mmcm_arty7_0
 `ifdef XILINX_PLL_MODEL__
   // This model is to be used only for simulation when the Xilinx Simulation model is not available. 
   reg [2:0] div_clk;
-  reg       clk20Mhz;
+  reg       clk25Mhz;
   `ifdef VERILATOR
-  assign   clk20Mhz_o = sysClk_i;
+  assign   clk25Mhz_o = sysClk_i;
   `else
-  assign    clk20Mhz_o = clk20Mhz;
+  assign    clk25Mhz_o = clk25Mhz;
   `endif
 
-  assign clk200Mhz_o = sysClk_i & RESETn_i;
-
+  assign clk25Mhz = div_clk[1];
   always @(posedge sysClk_i)
   begin
     if(~RESETn_i) begin
       div_clk <= 3'h0; 
-      clk20Mhz <= 1'b0;
     end else begin
-      if(div_clk == 3'h4) begin
-        div_clk <= 3'h0;
-      end else begin
-        div_clk <= div_clk + 1'b1;
-      end 
-      clk20Mhz <= (div_clk <=2);     // div 5, let's not worry about duty cycle
+      div_clk <= div_clk + 1'b1;
     end
   end
 
@@ -81,7 +73,7 @@ module msftDvIp_mmcm_arty7_0
 //    .CLKOUT0_DUTY_CYCLE   (0.500),
 //    .CLKOUT0_USE_FINE_PS  ("FALSE"),
 
-    .CLKOUT1_DIVIDE       (50),
+    .CLKOUT1_DIVIDE       (40),
     .CLKOUT1_PHASE        (0.000),
     .CLKOUT1_DUTY_CYCLE   (0.500),
     .CLKOUT1_USE_FINE_PS  ("FALSE"),
@@ -114,9 +106,9 @@ module msftDvIp_mmcm_arty7_0
     .CLKFBOUTB           (clkfboutb_unused),
     .CLKOUT0             (clkout0_unused),
     .CLKOUT0B            (clkout0b_unused),
-    .CLKOUT1             (clk20Mhz),
+    .CLKOUT1             (clk25Mhz),
     .CLKOUT1B            (clkout1b_unused),
-    .CLKOUT2             (clk200Mhz),
+    .CLKOUT2             (),
     .CLKOUT2B            (clkout2b_unused),
     .CLKOUT3             (clkout3_unused),
     .CLKOUT3B            (clkout3b_unused),
@@ -157,13 +149,9 @@ module msftDvIp_mmcm_arty7_0
     .I (clkfbout));
 
   BUFG clkout1_buf
-   (.O   (clk20Mhz_o),
-    .I   (clk20Mhz));
+   (.O   (clk25Mhz_o),
+    .I   (clk25Mhz));
 
-
-  BUFG clkout2_buf
-   (.O   (clk200Mhz_o),
-    .I   (clk200Mhz));
 
 //  BUFG clkout3_buf
 //   (.O   (usbClk_o),
