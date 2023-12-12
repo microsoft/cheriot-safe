@@ -104,7 +104,7 @@ msftDvIp_fpga_block_ram_byte_wr_model #(
     .dout   (IRAM_RDATA),
     .din    (IRAM_WDATA),
     .we     (IRAM_WE),
-    .wstrb({ {CBIT9{IRAM_BE[3]}}, {8{IRAM_BE[2]}}, {8{IRAM_BE[1]}}, {8{IRAM_BE[0]}} }),
+    .wstrb  ({1'b1, {8{IRAM_BE[3]}}, {8{IRAM_BE[2]}}, {8{IRAM_BE[1]}}, {8{IRAM_BE[0]}} }),
     .ready  (IRAM_READY)
   );
 
@@ -122,7 +122,7 @@ msftDvIp_fpga_block_ram_2port_model #(
     .addr(DRAM_ADDR[15:2]),
     .din(DRAM_WDATA),
     .we(DRAM_WE),
-    .wstrb({ {CBIT9{DRAM_BE[3]}}, {8{DRAM_BE[2]}}, {8{DRAM_BE[1]}}, {8{DRAM_BE[0]}} }),
+    .wstrb({1'b1, {8{DRAM_BE[3]}}, {8{DRAM_BE[2]}}, {8{DRAM_BE[1]}}, {8{DRAM_BE[0]}} }),
     .ready(dram_rdy),
     .cs2(tsmap_cs_i),
     .addr2(tsmap_addr_i[15:0]),
