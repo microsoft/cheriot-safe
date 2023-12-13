@@ -645,7 +645,7 @@ module msftDvIp_eth_mac_lite (
 
       if (tx_fsm_q == TX_DONE)
         tx_err_acc <= 1'b0;
-      else if ((tx_fsm_q == TX_DATA) & phy_col_q[2])
+      else if ((tx_fsm_q == TX_DATA) & phy_col_q[1])
         tx_err_acc <= 1'b1;
 
       if ((tx_fsm_q == TX_DONE) && ~cur_tx_buf)
