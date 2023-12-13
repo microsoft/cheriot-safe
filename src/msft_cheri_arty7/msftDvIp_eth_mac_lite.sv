@@ -95,9 +95,12 @@ module msftDvIp_eth_mac_lite (
   logic        rx_intr_stat;
   logic [1:0]  intr_enable;
   logic [31:0] tx_dbg_info, rx_dbg_info;
-  logic [31:0] rx_frame_cnt;
+  logic [31:0] rx_total_cnt;
+  logic [31:0] rx_good_cnt;
   logic [31:0] rx_drop_cnt;
   logic [31:0] rx_err_cnt;
+  logic [31:0] rx_filtd_cnt;
+  logic [31:0] rx_fcs_err_cnt;
 
   logic [6:0]  mdio_cnt;
 
@@ -289,16 +292,19 @@ module msftDvIp_eth_mac_lite (
   assign mac_regs_rdata[14] = {30'h0, intr_enable}; 
   assign mac_regs_rdata[15] = {30'h0, rx_intr_stat, tx_intr_stat}; 
   assign mac_regs_rdata[16] = {rx_len_1, rx_len_0}; 
-  assign mac_regs_rdata[17] = tx_dbg_info;
-  assign mac_regs_rdata[18] = rx_dbg_info;
-  assign mac_regs_rdata[19] = rx_frame_cnt;
-  assign mac_regs_rdata[20] = rx_drop_cnt;
-  assign mac_regs_rdata[21] = rx_err_cnt;
-  assign mac_regs_rdata[22] = {16'h0, 3'h0, tx_fifo_wdepth, 3'h0, rx_fifo_rdepth};
-  assign mac_regs_rdata[23] = phy_nibl_cnt;
-  assign mac_regs_rdata[24] = rx_fifo_rcnt;
+  assign mac_regs_rdata[17] = rx_total_cnt;
+  assign mac_regs_rdata[18] = rx_good_cnt;
+  assign mac_regs_rdata[19] = rx_drop_cnt;
+  assign mac_regs_rdata[20] = rx_filtd_cnt;
+  assign mac_regs_rdata[21] = rx_fcs_err_cnt;
+  assign mac_regs_rdata[22] = rx_err_cnt;
+  assign mac_regs_rdata[23] = 0;
+  assign mac_regs_rdata[24] = tx_dbg_info;
+  assign mac_regs_rdata[25] = rx_dbg_info;
+  assign mac_regs_rdata[26] = phy_nibl_cnt;
+  assign mac_regs_rdata[27] = rx_fifo_rcnt;
 
-  for (genvar i = 25; i<32; i++) begin : g_unused_regs
+  for (genvar i = 28; i<32; i++) begin : g_unused_regs
     assign mac_regs_rdata[i] = 32'h0; 
   end
 
@@ -507,7 +513,7 @@ module msftDvIp_eth_mac_lite (
   assign tx_ram_p1_cs    = (tx_fsm_q == TX_DATA);
   assign tx_ram_p1_addr  = {cur_tx_buf, tx_nibl_cnt[11:3]};
 
-  assign tx_dbg_info = {27'h0, cur_tx_buf, tx_fsm_q};
+  assign tx_dbg_info = {19'h0, tx_fifo_wdepth, 3'h0, cur_tx_buf, tx_fsm_q};
 
 
   assign tx_hwdata_req   = ~tx_raw_mode && ((tx_fsm_q == TX_PRE) || (tx_fsm_q == TX_FCS)) && 
@@ -712,9 +718,9 @@ module msftDvIp_eth_mac_lite (
 
   // determine whether to drop the packet
   assign rx_fcs_err    = (rx_fsm_q == RX_DONE) & ((~rx_fcs32)!=FCS_VD);
-  assign rx_frame_good = (rx_fsm_q == RX_DONE) & (|rx_addr_match_q) & ~(rx_fcs_filt & rx_fcs_err);
+  assign rx_frame_good = (rx_fsm_q == RX_DONE) & (|rx_addr_match_q) & ~(rx_fcs_filt & (rx_fcs_err|rx_err_acc));
 
-  assign rx_dbg_info = {16'h0, phy_flags, 7'h0, cur_rx_buf, rx_fsm_q};
+  assign rx_dbg_info = {11'h0, rx_fifo_rdepth, 4'h0, phy_flags, 3'h0, cur_rx_buf, rx_fsm_q};
 
   always_comb begin
     rx_fsm_d = rx_fsm_q;
@@ -800,10 +806,6 @@ module msftDvIp_eth_mac_lite (
       rx_err_1        <= 1'b0;
       rx_len_0        <= 0;
       rx_len_1        <= 0;
-      rx_frame_cnt    <= 0;
-      rx_drop_cnt     <= 0;
-      rx_err_cnt      <= 0;
-      rx_fifo_rcnt    <= 0;
     end else begin
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 12) && reg_wdata[0]) 
         rx_stat_0 <= 1'b0;
@@ -863,7 +865,7 @@ module msftDvIp_eth_mac_lite (
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 15) && reg_wdata[1]) 
         rx_intr_stat <= 1'b0;
-      else if (rx_fsm_q == RX_DONE)
+      else if ((rx_fsm_q == RX_DONE) & rx_frame_good)
         rx_intr_stat <= 1'b1;
 
       if (rx_fsm_q == RX_DONE)
@@ -881,23 +883,46 @@ module msftDvIp_eth_mac_lite (
         rx_len_1 <= rx_nibl_cnt[11:0];
       end
 
-      if (((rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR)) & rx_eof)
-        rx_frame_cnt <= rx_frame_cnt + 1;  
+    end
+  end
 
-      if ((rx_fsm_q == RX_OVR) & rx_eof)
+  // rx counters
+  always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
+    if (~s_axi_aresetn) begin
+      rx_total_cnt    <= 0;
+      rx_good_cnt     <= 0;
+      rx_drop_cnt     <= 0;
+      rx_filtd_cnt    <= 0;
+      rx_fcs_err_cnt  <= 0;
+      rx_err_cnt      <= 0;
+      rx_fifo_rcnt    <= 0;
+    end else begin
+      if (((rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR)) & rx_eof & (rx_total_cnt < 32'hffff_ffff))
+        rx_total_cnt <= rx_total_cnt + 1;  
+
+      if ((rx_fsm_q == RX_DONE) & rx_frame_good & (rx_good_cnt < 32'hffff_ffff))
+        rx_good_cnt <= rx_good_cnt + 1;  
+
+      if ((rx_fsm_q == RX_OVR) & rx_eof & (rx_drop_cnt < 32'hffff_ffff))
         rx_drop_cnt <= rx_drop_cnt + 1;  
 
-      if (((rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR)) & rx_err_acc & rx_eof)
+      if ((rx_fsm_q == RX_DONE) & ~(|rx_addr_match_q) & ~(rx_fcs_err|rx_err_acc) & 
+          (rx_filtd_cnt < 32'hffff_ffff))
+        rx_filtd_cnt <= rx_filtd_cnt + 1;  
+
+      if ((rx_fsm_q == RX_DONE) &  (rx_fcs_err) & (rx_fcs_err_cnt < 32'hffff_ffff))
+        rx_fcs_err_cnt <= rx_fcs_err_cnt + 1;  
+
+      if (((rx_fsm_q == RX_DATA) || (rx_fsm_q == RX_OVR)) & rx_err_acc & rx_eof & (rx_err_cnt < 32'hffff_ffff))
         rx_err_cnt <= rx_err_cnt + 1;  
 
       if (rx_fifo_rvalid && rx_fifo_rready && (rx_fifo_rcnt < 32'hffff_ffff)) 
         rx_fifo_rcnt <= rx_fifo_rcnt+1; 
     end
-  end
-
+  end  
 
   //===================================
-  // Tx/Rx buffere memories
+  // Tx/Rx buffer memories
   //===================================
   assign tx_ram_p0_cs = (reg_wr_req & (reg_waddr[11:10]==2'b01)) | (reg_rd_req & (reg_raddr[11:10]==2'b01));
   assign tx_ram_p0_we = reg_wr_req;
