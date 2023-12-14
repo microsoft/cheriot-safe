@@ -128,8 +128,8 @@ module msftDvIp_eth_mac_lite (
   logic [3:0]  rx_nibl;
   logic [31:0] rx_fifo_rcnt;
 
-  logic        tx_raw_mode, rx_fcs_filt;
-  logic [3:0]  rx_addr_filt;
+  logic        tx_raw_mode, rx_fcs_filt, rx_addr_filt;
+  logic [3:0]  rx_addr_match_en;
   logic [47:0] rx_sta_addr;
 
   localparam [31:0] crc32_tbl[16] = {32'h00000000, 32'h1db71064, 32'h3b6e20c8, 32'h26d930ac,
@@ -275,7 +275,7 @@ module msftDvIp_eth_mac_lite (
   end
 
   // Bit 0 of reg[0] controls phy reset 
-  assign mac_regs_rdata[0]  = {16'h1234, 3'h0, rx_fcs_filt, rx_addr_filt, 3'h0, tx_raw_mode, 4'h0};  
+  assign mac_regs_rdata[0]  = {16'h1234, 2'h0, rx_addr_filt, rx_fcs_filt, rx_addr_match_en, 3'h0, tx_raw_mode, 4'h0};  
   assign mac_regs_rdata[1]  = {rx_sta_addr[31:0]};
   assign mac_regs_rdata[2]  = {16'h0, rx_sta_addr[47:32]}; 
   assign mac_regs_rdata[3]  = scratch_reg; 
@@ -317,22 +317,26 @@ module msftDvIp_eth_mac_lite (
   begin
     int i;
     if (~s_axi_aresetn) begin
-      tx_raw_mode   <= 1'b0;
-      rx_addr_filt  <= 4'hf;
-      rx_fcs_filt   <= 1'b1;
-      rx_sta_addr   <= 48'h0;
-      reg_rd_done   <= 1'b0;
-      intr_enable   <= 2'b0;
-      scratch_reg   <= 32'h0;
+      tx_raw_mode       <= 1'b0;
+      rx_addr_match_en  <= 4'hf;
+      rx_fcs_filt       <= 1'b1;
+      rx_addr_filt      <= 1'b1;
+      rx_sta_addr       <= 48'h0;
+      reg_rd_done       <= 1'b0;
+      intr_enable       <= 2'b0;
+      scratch_reg       <= 32'h0;
     end else begin
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
         tx_raw_mode <= reg_wdata[4];
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
-        rx_addr_filt <= reg_wdata[11:8];
+        rx_addr_match_en <= reg_wdata[11:8];
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
         rx_fcs_filt <= reg_wdata[12];
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
+        rx_addr_filt <= reg_wdata[13];
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 1)) 
         rx_sta_addr[31:0] <= reg_wdata[31:0];
@@ -718,7 +722,8 @@ module msftDvIp_eth_mac_lite (
 
   // determine whether to drop the packet
   assign rx_fcs_err    = (rx_fsm_q == RX_DONE) & ((~rx_fcs32)!=FCS_VD);
-  assign rx_frame_good = (rx_fsm_q == RX_DONE) & (|rx_addr_match_q) & ~(rx_fcs_filt & (rx_fcs_err|rx_err_acc));
+  assign rx_frame_good = (rx_fsm_q == RX_DONE) & (~rx_addr_filt | (|rx_addr_match_q)) & 
+                         ~(rx_fcs_filt & (rx_fcs_err|rx_err_acc));
 
   assign rx_dbg_info = {11'h0, rx_fifo_rdepth, 4'h0, phy_flags, 3'h0, cur_rx_buf, rx_fsm_q};
 
@@ -769,20 +774,20 @@ module msftDvIp_eth_mac_lite (
       rx_addr_match_d = 4'hf;
     end else if ((rx_fsm_q == RX_DATA) & rx_fifo_rvalid & rx_dv) begin
       // match 0: individual STA MAC address
-      if (rx_addr_filt[0] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 11)  && 
+      if (rx_addr_match_en[0] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 11)  && 
           (rx_nibl != rx_sta_nibls[rx_nibl_cnt[3:0]]))
         rx_addr_match_d[0] = 1'b0;       
 
       // match 1: broadcast MAC address (all 1s)
-      if (rx_addr_filt[1] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 11)  && (rx_nibl != 4'hf))
+      if (rx_addr_match_en[1] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 11)  && (rx_nibl != 4'hf))
         rx_addr_match_d[1] = 1'b0;       
 
       // match 2: IP v4 multicast address
-      if (rx_addr_filt[2] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 5)  && (rx_nibl != ipv4_mcast_nibls[rx_nibl_cnt[2:0]]))
+      if (rx_addr_match_en[2] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 5)  && (rx_nibl != ipv4_mcast_nibls[rx_nibl_cnt[2:0]]))
         rx_addr_match_d[2] = 1'b0;       
 
       // match 3: IP v6 multicast address. we only check the prefix (0x3333)
-      if (rx_addr_filt[3] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 3)  && (rx_nibl != 4'h3))
+      if (rx_addr_match_en[3] & (rx_nibl_cnt >= 0) && (rx_nibl_cnt <= 3)  && (rx_nibl != 4'h3))
         rx_addr_match_d[3] = 1'b0;       
     end 
   end
