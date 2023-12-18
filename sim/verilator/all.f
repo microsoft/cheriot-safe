@@ -48,6 +48,7 @@ $DesignRoot/cheriot-ibex/rtl/ibex_pmp.sv
 $DesignRoot/cheriot-ibex/rtl/ibexc_top.sv
 $DesignRoot/cheriot-ibex/rtl/ibex_tracer.sv
 $DesignRoot/cheriot-ibex/rtl/ibexc_top_tracing.sv
+$DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_fifo_async.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_obimux3.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_obimux3w0.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_riscv_cheri_debug_reg.sv
@@ -100,6 +101,7 @@ $DesignRoot/src/msft_cheri_subsystem/msftDvDebug_cpu_trace.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_axi2apb.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_axi_def_sub.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_axi_dma_apb.sv
+$DesignRoot/src/msft_cheri_subsystem/msftDvIp_eth_mac_lite.sv
 $DesignRoot/src/msft_cheri_subsystem/msftDvIp_cheri0_subsystem.sv
 $DesignRoot/src/msft_cheri_arty7/BUFG.v
 $DesignRoot/src/msft_cheri_arty7/IBUF.v
@@ -109,6 +111,7 @@ $DesignRoot/src/msft_cheri_arty7/PULLDOWN.v
 $DesignRoot/src/msft_cheri_arty7/PULLUP.v
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_jtag2AxiApb_pkg.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvIp_mmcm_arty7_0.sv
+$DesignRoot/src/msft_cheri_arty7/msftDvIp_mmcm_arty7_1.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvIp_led_alive.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_sync_pulse_gen.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_globals.sv
@@ -121,5 +124,6 @@ $DesignRoot/src/msft_cheri_arty7/msftDvDebug_i2c_sub_base.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_i2c_sub.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_apb_mux.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvDebug_v1.sv
+$DesignRoot/src/msft_cheri_arty7/prim_flop_2sync.sv
 $DesignRoot/src/msft_cheri_arty7/msftDvIp_cheri_arty7_fpga.sv
 $DesignRoot/sim/verilator/swci_vtb.sv

@@ -76,7 +76,6 @@ module msftDvIp_cheri0_subsystem #(
   input  [1:0]                               bresp_dmb_m_i,
   input                                      bvalid_dmb_m_i,
   output                                     bready_dmb_m_o,
-  input  [1:0]                               eth_irq_i,
   output                                     txd_dvp_o,
   input                                      rxd_dvp_i,
   output [31:0]                              out0_o,
@@ -115,7 +114,21 @@ module msftDvIp_cheri0_subsystem #(
   input                                      i2c0_scl_in,
   input                                      i2c0_sda_in,
   output                                     i2c0_scl_pu_en,
-  output                                     i2c0_sda_pu_en
+  output                                     i2c0_sda_pu_en,
+  input  logic         phy_tx_clk,
+  input  logic         phy_rx_clk,
+  input  logic         phy_crs,
+  input  logic         phy_dv,
+  input  logic [3:0]   phy_rx_data,
+  input  logic         phy_col,
+  input  logic         phy_rx_er,
+  output logic         phy_rst_n,
+  output logic         phy_tx_en,
+  output logic [3:0]   phy_tx_data,
+  input  logic         phy_mdio_i,
+  output logic         phy_mdio_o,
+  output logic         phy_mdio_t,
+  output logic         phy_mdc
 );
 
 // ==================================================
@@ -1336,15 +1349,29 @@ msftDvIp_tcdev_wrapper msftDvIp_tcdev_wrapper_i (
   .reg_addr_i                    ( TCDEV_ADDR                               ),
   .reg_wdata_i                   ( TCDEV_WDATA                              ),
   .reg_we_i                      ( TCDEV_WE                                 ),
+  .reg_be_i                      ( TCDEV_BE                                 ),
   .reg_rdata_o                   ( TCDEV_RDATA                              ),
   .reg_ready_o                   ( TCDEV_READY                              ),
   .mmreg_coreout_i               ( mmreg_coreout                            ),
   .mmreg_corein_o                ( mmreg_corein                             ),
   .irq_periph_i                  ( irq_periph                               ),
-  .irq_eth_i                     ( eth_irq_i                                ),
   .irq_external_o                ( irq_external                             ),
   .irq_software_o                ( irq_software                             ),
-  .irq_timer_o                   ( irq_timer                                )
+  .irq_timer_o                   ( irq_timer                                ),
+  .phy_rx_clk                    ( phy_rx_clk    ),
+  .phy_dv                        ( phy_dv        ),
+  .phy_rx_data                   ( phy_rx_data   ),
+  .phy_crs                       ( phy_crs       ),
+  .phy_col                       ( phy_col       ),
+  .phy_rx_er                     ( phy_rx_er     ),
+  .phy_rst_n                     ( phy_rst_n     ),
+  .phy_tx_clk                    ( phy_tx_clk    ),
+  .phy_tx_en                     ( phy_tx_en     ),
+  .phy_tx_data                   ( phy_tx_data   ),
+  .phy_mdio_i                    ( phy_mdio_i    ),
+  .phy_mdio_o                    ( phy_mdio_o    ),                  
+  .phy_mdio_t                    ( phy_mdio_t    ),
+  .phy_mdc                       ( phy_mdc       )
 );
 
 

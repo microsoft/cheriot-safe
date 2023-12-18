@@ -24,6 +24,8 @@ module swci_vtb (
   output logic       uart_rx_full_o
 );
 
+wire        eth_mdio;
+
 msftDvIp_cheri_arty7_fpga dut (
   .board_clk_i    (sysclk_i),
   .board_rstn_i   (rstn_i),
@@ -37,7 +39,8 @@ msftDvIp_cheri_arty7_fpga dut (
   .TDI_i          (1'b0),
   .TDO_io         (),
   .alive_o        (),
-  .TRSTn_mux_o    (),
+  //.TRSTn_mux_o    (),
+  .eth_alive_o    (),
   .txd_dvp_o      (),
   .rxd_dvp_i      (1'b1),
   .i2c0_scl_io    (),
@@ -48,7 +51,20 @@ msftDvIp_cheri_arty7_fpga dut (
   .PMODA_io        (),
   .PMODB_io        (),
   .PMODC_io        (),
-  .PMODD_io        ()
+  .PMODD_io        (),
+  .eth_tx_clk_i    (eth_tx_clk),
+  .eth_rx_clk_i    (eth_rx_clk),
+  .eth_crs_i       (1'b0),
+  .eth_dv_i        (eth_tx_en),
+  .eth_rx_data_i   (eth_tx_data),
+  .eth_col_i       (1'b0),
+  .eth_rx_er_i     (1'b0),
+  .eth_rst_n_o     (),
+  .eth_tx_en_o     (eth_tx_en),
+  .eth_tx_data_o   (eth_tx_data),
+  .eth_mdio_io     (eth_mdio),
+  .eth_mdc_o       (eth_mdc),
+  .eth_ref_clk_o   ()
 );
 
 

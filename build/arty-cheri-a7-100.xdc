@@ -6,8 +6,8 @@
 ## Clock signal
 set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 } [get_ports { board_clk_i }]; #IO_L12P_T1_MRCC_35 Sch=gclk[100]
 create_clock -add -name board_clk_pin -period 10.00 -waveform {0 5} [get_ports { board_clk_i }];
-create_clock -period 50.000 -name sys_clk -waveform {0.000 25.000} [get_nets msftDvIp_mmcm_arty7_0_i/clk20Mhz]
-#create_clock -period 50.000 -name sys_clk_pin -waveform {0.000 25.000} [get_pins msftDvIp_mmcm_arty7_0_i/ohg_clk]
+# create_clock -period 25.000 -name sys_clk -waveform {0.000 12.500} [get_nets msftDvIp_mmcm_arty7_0_i/clk20Mhz]
+create_clock -period 30.000 -name sys_clk -waveform {0.000 15.000} [get_nets msftDvIp_mmcm_arty7_0_i/clkout1]
 create_clock -period 5.000 -name clk_200Mhz  -waveform {0.000 2.500} [get_pins msftDvIp_mmcm_arty7_0_i/clk200Mhz]
 create_clock -period 20.000 -name tck_clk_pin -waveform {0.000 10.000} [get_pins xPAD_TCK_inst/O]
 create_clock -period 20.000 -name spi0_clk_pin -waveform {0.000 10.000} [get_pins xPAD_sck0_inst/O]
@@ -20,11 +20,12 @@ set_property CLOCK_DEDICATED_ROUTE FALSE [ get_nets {sck0_i_IBUF} ];
 
 set_clock_groups -asynchronous \
   -group {board_clk_pin} \
-  -group {sys_clk_pin} \
+  -group {sys_clk} \
   -group {clk_200Mhz} \
   -group {tck_clk_pin} \
   -group {spi0_clk_pin} \
-  -group {eth_tx_clk_pin eth_rx_clk_pin}
+  -group {eth_tx_clk_pin} \
+  -group {eth_rx_clk_pin}
 
 ## Reset
 set_property -dict { PACKAGE_PIN C2    IOSTANDARD LVCMOS33 } [get_ports { board_rstn_i }]; #IO_L16P_T2_35 Sch=ck_rst

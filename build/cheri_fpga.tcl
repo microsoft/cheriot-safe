@@ -85,6 +85,7 @@ synth_design\
   -verilog_define LOAD_FPGA_MEMORIES\
   -verilog_define SYNTHESIS\
   -include_dirs $STITCH_INCLUDE_LIST\
+  -generic Sysclk33M=1
 
 write_checkpoint -force ./$netlistDir/${TOPLEVEL}_synthesized.dcp
 report_utilization -file ./$netlistDir/post-syn_reports/${TOPLEVEL}_utilization_synth.rpt

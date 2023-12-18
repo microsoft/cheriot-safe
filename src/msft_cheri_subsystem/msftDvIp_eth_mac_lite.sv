@@ -3,11 +3,26 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-module msftDvIp_eth_mac_lite (
-  input  logic        s_axi_aclk,
-  input  logic        s_axi_aresetn,
+module msftDvIp_eth_mac_lite # (
+  parameter bit UseAXI = 1'b1
+  ) (
+  input  logic        sysclk_i,
+  input  logic        rstn_i,
+
+  // Direct register interface
+  input  logic        reg_en_i,
+  input  logic [31:0] reg_addr_i,
+  input  logic [31:0] reg_wdata_i,
+  input  logic        reg_we_i,
+  input  logic [3:0]  reg_be_i,
+  output logic [31:0] reg_rdata_o,
+  output logic        reg_ready_o,
+
+  // Interrupts
   output logic        eth_tx_irq,
   output logic        eth_rx_irq,
+
+  // AXI interface
   input  logic [13:0] s_axi_awaddr,
   input  logic        s_axi_awvalid,
   output logic        s_axi_awready,
@@ -25,6 +40,8 @@ module msftDvIp_eth_mac_lite (
   output logic [1:0]  s_axi_rresp,
   output logic        s_axi_rvalid,
   input  logic        s_axi_rready,
+
+  // MII interface
   input  logic        phy_tx_clk,
   input  logic        phy_rx_clk,
   input  logic        phy_crs,
@@ -45,6 +62,7 @@ module msftDvIp_eth_mac_lite (
   localparam DATA_BUS_WIDTH=32;
 
   logic [ADDR_BUS_WIDTH-1:0]   reg_waddr, reg_raddr;
+  logic [ADDR_BUS_WIDTH-1:0]   reg_raddr_q;
   logic [DATA_BUS_WIDTH-1:0]   reg_wdata, reg_rdata;
 
   logic [3:0] reg_wstrb;
@@ -142,135 +160,155 @@ module msftDvIp_eth_mac_lite (
 
   logic [31:0] axi_rdata32;
 
-  //===================================
-  // AXI Read 
-  //===================================
-  localparam AXI_RD_IDLE     = 0;
-  localparam AXI_RD_REQ      = 1;
-  localparam AXI_RD_RESP     = 2;
+  if (UseAXI) begin
+    //===================================
+    // AXI Read 
+    //===================================
+    localparam AXI_RD_IDLE     = 0;
+    localparam AXI_RD_REQ      = 1;
+    localparam AXI_RD_RESP     = 2;
 
-  assign reg_rd_req = (rdState == AXI_RD_REQ);
-  assign s_axi_rdata = {axi_rdata32, axi_rdata32};
+    assign reg_rd_req = (rdState == AXI_RD_REQ);
+    assign s_axi_rdata = {axi_rdata32, axi_rdata32};
 
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn)
-  begin
-    if(!s_axi_aresetn) begin
-      reg_raddr     <= {DATA_BUS_WIDTH{1'b0}};
-      s_axi_arready <= 1'b1;
-      s_axi_rvalid  <= 1'b0;
-      s_axi_rresp   <= 2'h0;
-      rdState       <= AXI_RD_IDLE;
-      axi_rdata32   <= 0;
-    end else begin
-      case (rdState)
-        AXI_RD_IDLE: begin
-          if(s_axi_arvalid) begin
-            reg_raddr     <= s_axi_araddr[13:2];
-            s_axi_arready <= 1'b0;
-            s_axi_rvalid  <= 1'b0;
-            rdState       <= AXI_RD_REQ;
-          end
-        end
-        AXI_RD_REQ: begin
-          if(reg_rd_done) begin
-            s_axi_rvalid <= 1'b1;
-            s_axi_rresp  <= {1'b0, 1'b0};
-            axi_rdata32  <= reg_rdata;
-            rdState      <= AXI_RD_RESP; 
-          end
-        end
-        AXI_RD_RESP: begin
-          if(s_axi_rready) begin
-            s_axi_rvalid  <= 1'b0;
-            s_axi_rresp   <= 2'h0;
-            s_axi_arready <= 1'b1;
-            rdState       <= AXI_RD_IDLE;
-          end
-        end
-      endcase
-    end
-  end
-
-  //===================================
-  // AXI Write 
-  //===================================
-  localparam AXI_WR_IDLE     = 0;
-  localparam AXI_WDATA_WAIT  = 1;
-  localparam AXI_WR_REQ      = 2;
-  localparam AXI_WR_RESP     = 3;
-
-  assign reg_wr_req = (wrState == AXI_WR_REQ);
-
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn)
-  begin
-    if(!s_axi_aresetn) begin
-      reg_waddr     <= {DATA_BUS_WIDTH{1'b0}};
-      reg_wdata     <= {DATA_BUS_WIDTH{1'b0}};
-      reg_wstrb     <= 4'h0;
-      s_axi_awready <= 1'b1;
-      s_axi_wready  <= 1'b1;
-      s_axi_bresp   <= 2'h0;
-      s_axi_bvalid  <= 1'b0;
-      wrState       <= AXI_WR_IDLE;
-    end else begin
-      case (wrState)
-        AXI_WR_IDLE: begin
-          if(s_axi_awvalid) begin
-            reg_waddr     <= s_axi_awaddr[13:2];
-            s_axi_awready <= 1'b0;
-            if(s_axi_wvalid) begin
-              reg_wdata    <= s_axi_awaddr[2] ? s_axi_wdata[63:32] : s_axi_wdata[31:0];
-              reg_wstrb    <= s_axi_awaddr[2] ? s_axi_wstrb[7:4] : s_axi_wstrb[3:0];
-              s_axi_wready <= 1'b0;
-              wrState      <= AXI_WR_REQ;
-            end else begin
-              wrState <= AXI_WDATA_WAIT;
+    always @(posedge sysclk_i or negedge rstn_i)
+    begin
+      if(!rstn_i) begin
+        reg_raddr     <= {ADDR_BUS_WIDTH{1'b0}};
+        s_axi_arready <= 1'b1;
+        s_axi_rvalid  <= 1'b0;
+        s_axi_rresp   <= 2'h0;
+        rdState       <= AXI_RD_IDLE;
+        axi_rdata32   <= 0;
+      end else begin
+        case (rdState)
+          AXI_RD_IDLE: begin
+            if(s_axi_arvalid) begin
+              reg_raddr     <= s_axi_araddr[13:2];
+              s_axi_arready <= 1'b0;
+              s_axi_rvalid  <= 1'b0;
+              rdState       <= AXI_RD_REQ;
             end
           end
-        end
-        AXI_WDATA_WAIT: begin
-          if(s_axi_wvalid) begin
-            reg_wdata    <= reg_waddr[0] ? s_axi_wdata[63:32] : s_axi_wdata[31:0];
-            reg_wstrb    <= reg_waddr[0] ? s_axi_wstrb[7:4] : s_axi_wstrb[3:0];
-            wrState    <= AXI_WR_REQ;
+          AXI_RD_REQ: begin
+            if(reg_rd_done) begin
+              s_axi_rvalid <= 1'b1;
+              s_axi_rresp  <= {1'b0, 1'b0};
+              axi_rdata32  <= reg_rdata;
+              rdState      <= AXI_RD_RESP; 
+            end
           end
-        end
-        AXI_WR_REQ: begin
-          if(reg_wr_done) begin
-            s_axi_bvalid <= 1'b1;
-            s_axi_bresp  <= {1'b0, 1'b0};
-            wrState      <= AXI_WR_RESP; 
+          AXI_RD_RESP: begin
+            if(s_axi_rready) begin
+              s_axi_rvalid  <= 1'b0;
+              s_axi_rresp   <= 2'h0;
+              s_axi_arready <= 1'b1;
+              rdState       <= AXI_RD_IDLE;
+            end
           end
-        end
-        AXI_WR_RESP: begin
-          if(s_axi_bready) begin
-            s_axi_bvalid <= 1'b0;
-            s_axi_bresp <= 2'h0;
-            s_axi_awready <= 1'b1;
-            s_axi_wready <= 1'b1;
-            wrState <= AXI_WR_IDLE;
-          end
-        end
-      endcase
+        endcase
+      end
     end
-  end
+
+    //===================================
+    // AXI Write 
+    //===================================
+    localparam AXI_WR_IDLE     = 0;
+    localparam AXI_WDATA_WAIT  = 1;
+    localparam AXI_WR_REQ      = 2;
+    localparam AXI_WR_RESP     = 3;
+
+    assign reg_wr_req = (wrState == AXI_WR_REQ);
+
+    always @(posedge sysclk_i or negedge rstn_i)
+    begin
+      if(!rstn_i) begin
+        reg_waddr     <= {ADDR_BUS_WIDTH{1'b0}};
+        reg_wdata     <= {DATA_BUS_WIDTH{1'b0}};
+        reg_wstrb     <= 4'h0;
+        s_axi_awready <= 1'b1;
+        s_axi_wready  <= 1'b1;
+        s_axi_bresp   <= 2'h0;
+        s_axi_bvalid  <= 1'b0;
+        wrState       <= AXI_WR_IDLE;
+      end else begin
+        case (wrState)
+          AXI_WR_IDLE: begin
+            if(s_axi_awvalid) begin
+              reg_waddr     <= s_axi_awaddr[13:2];
+              s_axi_awready <= 1'b0;
+              if(s_axi_wvalid) begin
+                reg_wdata    <= s_axi_awaddr[2] ? s_axi_wdata[63:32] : s_axi_wdata[31:0];
+                reg_wstrb    <= s_axi_awaddr[2] ? s_axi_wstrb[7:4] : s_axi_wstrb[3:0];
+                s_axi_wready <= 1'b0;
+                wrState      <= AXI_WR_REQ;
+              end else begin
+                wrState <= AXI_WDATA_WAIT;
+              end
+            end
+          end
+          AXI_WDATA_WAIT: begin
+            if(s_axi_wvalid) begin
+              reg_wdata    <= reg_waddr[0] ? s_axi_wdata[63:32] : s_axi_wdata[31:0];
+              reg_wstrb    <= reg_waddr[0] ? s_axi_wstrb[7:4] : s_axi_wstrb[3:0];
+              wrState    <= AXI_WR_REQ;
+            end
+          end
+          AXI_WR_REQ: begin
+            if(reg_wr_done) begin
+              s_axi_bvalid <= 1'b1;
+              s_axi_bresp  <= {1'b0, 1'b0};
+              wrState      <= AXI_WR_RESP; 
+            end
+          end
+          AXI_WR_RESP: begin
+            if(s_axi_bready) begin
+              s_axi_bvalid <= 1'b0;
+              s_axi_bresp <= 2'h0;
+              s_axi_awready <= 1'b1;
+              s_axi_wready <= 1'b1;
+              wrState <= AXI_WR_IDLE;
+            end
+          end
+        endcase
+      end
+    end
+
+  end else begin // Do not use AXI
+    assign reg_wr_req = reg_en_i & reg_we_i;
+    assign reg_waddr  = reg_addr_i[ADDR_BUS_WIDTH+2:2];    // 32-bit word address
+    assign reg_wdata  = reg_wdata_i;
+    assign reg_wstrb  = reg_be_i;
+
+    assign reg_ready_o = 1'b1;
+    assign reg_rdata_o = reg_rdata;
+    assign reg_rd_req  = reg_en_i & ~reg_we_i;     
+    assign reg_raddr   = reg_addr_i[ADDR_BUS_WIDTH+2:2];
+  end  // Do not use AXI
 
   //===================================
   // Registers and muxing
   //===================================
   assign reg_wr_done = 1'b1;
 
+  always @(posedge sysclk_i or negedge rstn_i) begin
+    if (~rstn_i) begin
+      reg_raddr_q <= 0;
+    end else begin
+      reg_raddr_q <= reg_raddr;
+    end
+  end
 
   always_comb begin
-    case (reg_raddr[11:10])
+    case (reg_raddr_q[11:10])
       2'b00:
-        reg_rdata = mac_regs_rdata[reg_raddr[4:0]];
+        reg_rdata = mac_regs_rdata[reg_raddr_q[4:0]];
       2'b01:
         reg_rdata = tx_ram_p0_rdata;
       2'b10:
         reg_rdata = rx_ram_p1_rdata;
       default:
-        reg_rdata = mac_regs_rdata[reg_raddr[4:0]];
+        reg_rdata = mac_regs_rdata[reg_raddr_q[4:0]];
     endcase
   end
 
@@ -313,10 +351,10 @@ module msftDvIp_eth_mac_lite (
   assign eth_tx_irq = intr_enable[0] & tx_intr_stat;
   assign eth_rx_irq = intr_enable[1] & rx_intr_stat;
 
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn)
+  always @(posedge sysclk_i or negedge rstn_i)
   begin
     int i;
-    if (~s_axi_aresetn) begin
+    if (~rstn_i) begin
       tx_raw_mode       <= 1'b0;
       rx_addr_match_en  <= 4'hf;
       rx_fcs_filt       <= 1'b1;
@@ -348,7 +386,7 @@ module msftDvIp_eth_mac_lite (
         scratch_reg <= reg_wdata;
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 14)) 
-        intr_enable = reg_wdata[1:0];
+        intr_enable <= reg_wdata[1:0];
 
       reg_rd_done <= reg_rd_req;
     end
@@ -357,8 +395,8 @@ module msftDvIp_eth_mac_lite (
   // phy reset generation (>1 us low pulse)
   logic [7:0] phy_rst_cnt;
 
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
-    if (~s_axi_aresetn) begin
+  always @(posedge sysclk_i or negedge rstn_i) begin
+    if (~rstn_i) begin
       phy_rst_n   <= 1'b1;
       phy_rst_cnt <= 1'b1;
     end else begin
@@ -369,7 +407,7 @@ module msftDvIp_eth_mac_lite (
       else if (phy_rst_cnt > 0)
         phy_rst_cnt <= phy_rst_cnt + 1;
 
-      phy_rst_n = ~((phy_rst_cnt >=2) && (phy_rst_cnt <=32));
+      phy_rst_n <= ~((phy_rst_cnt >=2) && (phy_rst_cnt <=32));
     end
   end
 
@@ -385,8 +423,8 @@ module msftDvIp_eth_mac_lite (
   assign phy_mdio_t =  mdio_init | (mdio_stat & mdio_op && (mdio_cnt > 29));
   assign mdio_en = 1'b1;
   
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
-    if (~s_axi_aresetn) begin
+  always @(posedge sysclk_i or negedge rstn_i) begin
+    if (~rstn_i) begin
       mdio_phy_addr  <= 5'h1;
       mdio_reg_addr  <= 5'h0;
       mdio_op        <= 1'b0;
@@ -496,8 +534,8 @@ module msftDvIp_eth_mac_lite (
   assign phy_tx_en   = tx_fifo_rvalid & tx_fifo_rready;
   assign phy_tx_data = tx_fifo_rdata;
 
-  always @(posedge phy_tx_clk or negedge s_axi_aresetn) begin
-    if (~s_axi_aresetn) begin
+  always @(posedge phy_tx_clk or negedge rstn_i) begin
+    if (~rstn_i) begin
       tx_fifo_rready <= 1'b0;
     end else begin
       if (tx_fifo_rdepth > 4)
@@ -585,9 +623,9 @@ module msftDvIp_eth_mac_lite (
     end
   end
 
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn)
+  always @(posedge sysclk_i or negedge rstn_i)
   begin
-    if (~s_axi_aresetn) begin
+    if (~rstn_i) begin
       tx_len_0          <= 0;
       tx_len_1          <= 0;
       tx_stat_0         <= 1'b0;
@@ -682,9 +720,9 @@ module msftDvIp_eth_mac_lite (
   //===================================
   // Rx MII driver 
 
-  // always @(negedge phy_rx_clk or negedge s_axi_aresetn) begin
-  always @(posedge phy_rx_clk or negedge s_axi_aresetn) begin
-    if (~s_axi_aresetn) begin
+  // always @(negedge phy_rx_clk or negedge rstn_i) begin
+  always @(posedge phy_rx_clk or negedge rstn_i) begin
+    if (~rstn_i) begin
       rx_fifo_wvalid <= 1'b0;
       rx_fifo_wdata  <= 6'h0;
       phy_dv_q       <= 1'b0;
@@ -792,8 +830,8 @@ module msftDvIp_eth_mac_lite (
     end 
   end
 
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
-    if (~s_axi_aresetn) begin
+  always @(posedge sysclk_i or negedge rstn_i) begin
+    if (~rstn_i) begin
       rx_stat_0       <= 1'b0;
       rx_stat_1       <= 1'b0;
       rx_fsm_q        <= RX_IDLE;
@@ -892,8 +930,8 @@ module msftDvIp_eth_mac_lite (
   end
 
   // rx counters
-  always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
-    if (~s_axi_aresetn) begin
+  always @(posedge sysclk_i or negedge rstn_i) begin
+    if (~rstn_i) begin
       rx_total_cnt    <= 0;
       rx_good_cnt     <= 0;
       rx_drop_cnt     <= 0;
@@ -941,7 +979,7 @@ module msftDvIp_eth_mac_lite (
     .RAM_WIDTH        (32),
     .RAM_DEPTH        (1024)
   ) u_tx_ram (
-    .clk   (s_axi_aclk),
+    .clk   (sysclk_i),
     .cs    (tx_ram_p0_cs),
     .dout  (tx_ram_p0_rdata),
     .addr  (tx_ram_p0_addr),
@@ -958,7 +996,7 @@ module msftDvIp_eth_mac_lite (
     .RAM_WIDTH        (32),
     .RAM_DEPTH        (1024)
   ) u_rx_ram (
-    .clk   (s_axi_aclk),
+    .clk   (sysclk_i),
     .cs    (rx_ram_p0_cs),
     .dout  (),
     .addr  (rx_ram_p0_addr),
@@ -979,14 +1017,14 @@ module msftDvIp_eth_mac_lite (
     .Width (4),
     .Depth (16)
   ) u_tx_fifo (
-    .clk_wr_i  (s_axi_aclk),
-    .rst_wr_ni (s_axi_aresetn),
+    .clk_wr_i  (sysclk_i),
+    .rst_wr_ni (rstn_i),
     .wvalid_i  (tx_fifo_wvalid),
     .wready_o  (tx_fifo_wready),
     .wdata_i   (tx_fifo_wdata),
     .wdepth_o  (tx_fifo_wdepth),
     .clk_rd_i  (phy_tx_clk),
-    .rst_rd_ni (s_axi_aresetn),
+    .rst_rd_ni (rstn_i),
     .rvalid_o  (tx_fifo_rvalid),
     .rready_i  (tx_fifo_rready),
     .rdata_o   (tx_fifo_rdata),
@@ -998,13 +1036,13 @@ module msftDvIp_eth_mac_lite (
     .Depth (16)
   ) u_rx_fifo (
     .clk_wr_i  (phy_rx_clk),
-    .rst_wr_ni (s_axi_aresetn),
+    .rst_wr_ni (rstn_i),
     .wvalid_i  (rx_fifo_wvalid),
     .wready_o  (rx_fifo_wready),
     .wdata_i   (rx_fifo_wdata),
     .wdepth_o  (rx_fifo_wdepth),
-    .clk_rd_i  (s_axi_aclk),
-    .rst_rd_ni (s_axi_aresetn),
+    .clk_rd_i  (sysclk_i),
+    .rst_rd_ni (rstn_i),
     .rvalid_o  (rx_fifo_rvalid),
     .rready_i  (rx_fifo_rready),
     .rdata_o   (rx_fifo_rdata),

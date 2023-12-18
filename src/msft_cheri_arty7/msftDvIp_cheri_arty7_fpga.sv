@@ -9,7 +9,9 @@
 // ==================================================
 // Module msftDvIp_cheri_arty7_fpga Definition
 // ==================================================
-module msftDvIp_cheri_arty7_fpga (
+module msftDvIp_cheri_arty7_fpga # (
+  parameter bit Sysclk33M = 1'b1
+)(
   input                                      board_clk_i,
   input                                      board_rstn_i,
   input                                      ssel0_i,
@@ -50,7 +52,7 @@ module msftDvIp_cheri_arty7_fpga (
   output                                     eth_ref_clk_o
 );
 
-localparam UseEthMAC = 1'b1;
+localparam UseEthMACinDMB = 1'b0;
 
 // ==================================================
 // Internal Wire Signals
@@ -250,8 +252,8 @@ wire          phy_rx_clk;
 wire          phy_tx_clk;
 
 wire          clk_25m;
-wire  [1:0]   eth_irq;
-wire          eth_rx_irq, eth_tx_irq;
+//wire  [1:0]   eth_irq;
+//wire          eth_rx_irq, eth_tx_irq;
 
 // ==================================================
 // Unconnected Pins
@@ -265,12 +267,13 @@ assign rstn = board_rstn;
 // ==================================================
 // Instance msftDvIp_mmcm_arty7_0
 // ==================================================
-msftDvIp_mmcm_arty7_0 msftDvIp_mmcm_arty7_0_i (
-  .sysClk_i                      ( board_clk                                ),
-  .clk20Mhz_o                    ( sysclk                                   ),
+msftDvIp_mmcm_arty7_0 #(.Sysclk33M(Sysclk33M)
+  ) msftDvIp_mmcm_arty7_0_i (
+  .board_clk_i                   ( board_clk                                ),
+  .sysclk_o                      ( sysclk                                   ),
   .clk200Mhz_o                   ( clk200Mhz                                ),
   .RESETn_i                      ( board_rstn                               )
-);
+  );
 
 // ethernet 25MHz refclk generation
 msftDvIp_mmcm_arty7_1 msftDvIp_mmcm_arty7_1_i (
@@ -376,7 +379,6 @@ msftDvIp_cheri0_subsystem #(
   .bresp_dmb_m_i                 ( bresp_dmb_m                              ),
   .bvalid_dmb_m_i                ( bvalid_dmb_m                             ),
   .bready_dmb_m_o                ( bready_dmb_m                             ),
-  .eth_irq_i                     ( eth_irq),
   .txd_dvp_o                     ( txd_dvp                                  ),
   .rxd_dvp_i                     ( rxd_dvp                                  ),
   .out0_o                        ( out0                                     ),
@@ -415,7 +417,21 @@ msftDvIp_cheri0_subsystem #(
   .i2c0_scl_in                   ( i2c0_scl_in                              ),
   .i2c0_sda_in                   ( i2c0_sda_in                              ),
   .i2c0_scl_pu_en                ( i2c0_scl_pu_en                           ),
-  .i2c0_sda_pu_en                ( i2c0_sda_pu_en                           )
+  .i2c0_sda_pu_en                ( i2c0_sda_pu_en                           ),
+  .phy_rx_clk                    ( phy_rx_clk    ),
+  .phy_dv                        ( phy_dv        ),
+  .phy_rx_data                   ( phy_rx_data   ),
+  .phy_crs                       ( phy_crs       ),
+  .phy_col                       ( phy_col       ),
+  .phy_rx_er                     ( phy_rx_er     ),
+  .phy_rst_n                     ( phy_rst_n     ),
+  .phy_tx_clk                    ( phy_tx_clk    ),
+  .phy_tx_en                     ( phy_tx_en     ),
+  .phy_tx_data                   ( phy_tx_data   ),
+  .phy_mdio_i                    ( phy_mdio_in   ),
+  .phy_mdio_o                    ( phy_mdio_out  ),                  
+  .phy_mdio_t                    ( phy_mdio_t    ),
+  .phy_mdc                       ( phy_mdc       )
 );
 
 
@@ -423,7 +439,6 @@ msftDvIp_cheri0_subsystem #(
 //  Inst Pre Code 
 // ==================================================
 
-if (~UseEthMAC) begin
    //==================================================
    //Instance external_ram
    //==================================================
@@ -475,56 +490,11 @@ if (~UseEthMAC) begin
     .s_axi_rlast                   ( rlast_dmb_m                              ),
     .s_axi_rvalid                  ( rvalid_dmb_m                             )
   );
-end else begin
-  // ==================================================
-  // Instance axi_etherlite 
-  // ==================================================
-  msftDvIp_eth_mac_lite   eth_mac_i (
-    .s_axi_aclk                    ( sysclk        ),
-    .s_axi_aresetn                 ( rstn          ),
-    .eth_tx_irq                    ( eth_tx_irq),
-    .eth_rx_irq                    ( eth_rx_irq),
-    .s_axi_awaddr                  ( awaddr_dmb_m  ),
-    .s_axi_awvalid                 ( awvalid_dmb_m ),
-    .s_axi_awready                 ( awready_dmb_m ),
-    .s_axi_wdata                   ( wdata_dmb_m   ),
-    .s_axi_wstrb                   ( wstrb_dmb_m   ),
-    .s_axi_wvalid                  ( wvalid_dmb_m  ),
-    .s_axi_wready                  ( wready_dmb_m  ),
-    .s_axi_bready                  ( bready_dmb_m  ),
-    .s_axi_bresp                   ( bresp_dmb_m   ),
-    .s_axi_bvalid                  ( bvalid_dmb_m  ),
-    .s_axi_araddr                  ( araddr_dmb_m  ),
-    .s_axi_arvalid                 ( arvalid_dmb_m ),
-    .s_axi_arready                 ( arready_dmb_m ),
-    .s_axi_rready                  ( rready_dmb_m  ),
-    .s_axi_rdata                   ( rdata_dmb_m  ),
-    .s_axi_rresp                   ( rresp_dmb_m   ),
-    .s_axi_rvalid                  ( rvalid_dmb_m  ),
-    .phy_rx_clk                    ( phy_rx_clk    ),
-    .phy_dv                        ( phy_dv        ),
-    .phy_rx_data                   ( phy_rx_data   ),
-    //.phy_rx_clk                    ( phy_tx_clk    ),
-    //.phy_dv                        ( phy_tx_en        ),
-    //.phy_rx_data                   ( phy_tx_data   ),
-    .phy_crs                       ( phy_crs       ),
-    .phy_col                       ( phy_col       ),
-    .phy_rx_er                     ( phy_rx_er     ),
-    .phy_rst_n                     ( phy_rst_n     ),
-    .phy_tx_clk                    ( phy_tx_clk    ),
-    .phy_tx_en                     ( phy_tx_en     ),
-    .phy_tx_data                   ( phy_tx_data   ),
-    .phy_mdio_i                    ( phy_mdio_in   ),
-    .phy_mdio_o                    ( phy_mdio_out  ),                  
-    .phy_mdio_t                    ( phy_mdio_t    ),
-    .phy_mdc                       ( phy_mdc       )
-  );
 
-  assign rlast_dmb_m = 1'b1;
-  assign rid_dmb_m = 0;
 
-  assign eth_irq = {eth_rx_irq, eth_tx_irq};
-end
+  // assign rlast_dmb_m = 1'b1;
+  // assign rid_dmb_m = 0;
+  // assign eth_irq = {eth_rx_irq, eth_tx_irq};
 
 // ==================================================
 //  Inst Pre Code 
