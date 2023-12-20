@@ -6,6 +6,7 @@ set DesignRoot [lindex $argv 0 ]
 set netlistDir [lindex $argv 1 ]
 set files      [lindex $argv 2 ]
 set xdcfiles   [lindex $argv 3 ]
+set Sysclk33M  [lindex $argv 4 ]
 
 #==================================================
 # FPGA Build
@@ -85,7 +86,7 @@ synth_design\
   -verilog_define LOAD_FPGA_MEMORIES\
   -verilog_define SYNTHESIS\
   -include_dirs $STITCH_INCLUDE_LIST\
-  -generic Sysclk33M=1
+  -generic Sysclk33M=$Sysclk33M
 
 write_checkpoint -force ./$netlistDir/${TOPLEVEL}_synthesized.dcp
 report_utilization -file ./$netlistDir/post-syn_reports/${TOPLEVEL}_utilization_synth.rpt
