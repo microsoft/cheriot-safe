@@ -110,8 +110,8 @@ module msftDvIp_eth_mac_lite # (
   logic [15:0] rx_len_0, rx_len_1;
   logic        rx_stat_0, rx_stat_1;
   logic        rx_err_0, rx_err_1;
-  logic        rx_intr_stat;
-  logic [1:0]  intr_enable;
+  logic        rx_intr_stat, rx_early_intr_stat;
+  logic [2:0]  intr_enable;
   logic [31:0] tx_dbg_info, rx_dbg_info;
   logic [31:0] rx_total_cnt;
   logic [31:0] rx_good_cnt;
@@ -327,8 +327,8 @@ module msftDvIp_eth_mac_lite # (
   assign mac_regs_rdata[11] = {30'h0, tx_err_1, tx_stat_1}; 
   assign mac_regs_rdata[12] = {1'b0, rx_len_0[15:1], 14'h0, rx_err_0,  rx_stat_0}; 
   assign mac_regs_rdata[13] = {1'b0, rx_len_1[15:1], 14'h0, rx_err_1,  rx_stat_1}; 
-  assign mac_regs_rdata[14] = {30'h0, intr_enable}; 
-  assign mac_regs_rdata[15] = {30'h0, rx_intr_stat, tx_intr_stat}; 
+  assign mac_regs_rdata[14] = {29'h0, intr_enable}; 
+  assign mac_regs_rdata[15] = {29'h0, rx_early_intr_stat, rx_intr_stat, tx_intr_stat}; 
   assign mac_regs_rdata[16] = {rx_len_1, rx_len_0}; 
   assign mac_regs_rdata[17] = rx_total_cnt;
   assign mac_regs_rdata[18] = rx_good_cnt;
@@ -349,7 +349,7 @@ module msftDvIp_eth_mac_lite # (
   assign mac_reg_sel = (reg_waddr[11:5] == 0);
 
   assign eth_tx_irq = intr_enable[0] & tx_intr_stat;
-  assign eth_rx_irq = intr_enable[1] & rx_intr_stat;
+  assign eth_rx_irq = (intr_enable[1] & rx_intr_stat) | (intr_enable[2] & rx_early_intr_stat);
 
   always @(posedge sysclk_i or negedge rstn_i)
   begin
@@ -361,7 +361,7 @@ module msftDvIp_eth_mac_lite # (
       rx_addr_filt      <= 1'b1;
       rx_sta_addr       <= 48'h0;
       reg_rd_done       <= 1'b0;
-      intr_enable       <= 2'b0;
+      intr_enable       <= 3'h0;
       scratch_reg       <= 32'h0;
     end else begin
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 0)) 
@@ -386,7 +386,7 @@ module msftDvIp_eth_mac_lite # (
         scratch_reg <= reg_wdata;
 
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 14)) 
-        intr_enable <= reg_wdata[1:0];
+        intr_enable <= reg_wdata[2:0];
 
       reg_rd_done <= reg_rd_req;
     end
@@ -832,23 +832,24 @@ module msftDvIp_eth_mac_lite # (
 
   always @(posedge sysclk_i or negedge rstn_i) begin
     if (~rstn_i) begin
-      rx_stat_0       <= 1'b0;
-      rx_stat_1       <= 1'b0;
-      rx_fsm_q        <= RX_IDLE;
-      cur_rx_buf      <= 1'b0;
-      rx_nibl_cnt     <= 0;
-      rx_prev_nibl    <= 4'h0;
-      rx_ram_p0_wdata <= 32'h0;
-      rx_ram_p0_cs    <= 1'b0;
-      rx_ram_p0_addr  <= 0;
-      rx_addr_match_q <= 4'h0;
-      rx_fcs32        <= 32'h0;
-      rx_intr_stat    <= 1'b0;
-      rx_err_acc      <= 1'b0;
-      rx_err_0        <= 1'b0;
-      rx_err_1        <= 1'b0;
-      rx_len_0        <= 0;
-      rx_len_1        <= 0;
+      rx_stat_0          <= 1'b0;
+      rx_stat_1          <= 1'b0;
+      rx_fsm_q           <= RX_IDLE;
+      cur_rx_buf         <= 1'b0;
+      rx_nibl_cnt        <= 0;
+      rx_prev_nibl       <= 4'h0;
+      rx_ram_p0_wdata    <= 32'h0;
+      rx_ram_p0_cs       <= 1'b0;
+      rx_ram_p0_addr     <= 0;
+      rx_addr_match_q    <= 4'h0;
+      rx_fcs32           <= 32'h0;
+      rx_intr_stat       <= 1'b0;
+      rx_err_acc         <= 1'b0;
+      rx_err_0           <= 1'b0;
+      rx_err_1           <= 1'b0;
+      rx_len_0           <= 0;
+      rx_len_1           <= 0;
+      rx_early_intr_stat <= 1'b0;
     end else begin
       if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 12) && reg_wdata[0]) 
         rx_stat_0 <= 1'b0;
@@ -910,6 +911,11 @@ module msftDvIp_eth_mac_lite # (
         rx_intr_stat <= 1'b0;
       else if ((rx_fsm_q == RX_DONE) & rx_frame_good)
         rx_intr_stat <= 1'b1;
+
+      if (reg_wr_req & mac_reg_sel && (reg_waddr[4:0] == 15) && reg_wdata[2]) 
+        rx_early_intr_stat <= 1'b0;
+      else if ((rx_fsm_q == RX_HUNT) && (rx_fsm_d == RX_DATA))
+        rx_early_intr_stat <= 1'b1;
 
       if (rx_fsm_q == RX_DONE)
         rx_err_acc <= 1'b0;

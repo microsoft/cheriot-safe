@@ -12,7 +12,7 @@ module msftDvIp_led_alive (
 
 reg [31:0] led_cnt;
 
-assign alive_o = led_cnt[26];
+assign alive_o = led_cnt[27];
 
 always @(posedge clk_i or negedge rstn_i)
 begin

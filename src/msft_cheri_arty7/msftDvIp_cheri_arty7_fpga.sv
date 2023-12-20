@@ -25,7 +25,6 @@ module msftDvIp_cheri_arty7_fpga # (
   inout                                      TDO_io,
   output                                     alive_o,
   output                                     eth_alive_o,
-//  output                                     TRSTn_mux_o,
   output                                     txd_dvp_o,
   input                                      rxd_dvp_i,
   inout                                      i2c0_scl_io,
@@ -295,9 +294,12 @@ msftDvIp_led_alive msftDvIp_led_alive_i (
   .alive_o                       ( alive                                    )
 );
 
+localparam eth_alive_sel = 1'b0;
 logic eth_alive;
 logic [31:0] eth_alive_cnt;
-assign eth_alive = eth_alive_cnt[23];
+
+assign eth_alive = eth_alive_sel ? eth_alive_cnt[23] : TRSTn_mux;
+
 always @(posedge phy_rx_clk, negedge rstn) begin
   if (~rstn) begin
     eth_alive_cnt <= 0;
@@ -626,7 +628,6 @@ IBUF  xPAD_TDI_inst                                                 (.I(        
 IOBUF xPAD_TDO_inst                                                 (.IO(              TDO_io), .I(                 TDO), .O(              TDO_in), .T(         ~TDOoen_dvp) );
 OBUF  xPAD_alive_inst                                               (.O(             alive_o),  .I(               alive) );
 OBUF  xPAD_eth_alive_inst                                           (.O(         eth_alive_o),  .I(               eth_alive) );
-//OBUF  xPAD_TRSTn_mux_inst                                           (.O(         TRSTn_mux_o),  .I(           TRSTn_mux) );
 OBUF  xPAD_txd_dvp_inst                                             (.O(           txd_dvp_o),  .I(             txd_dvp) );
 IBUF  xPAD_rxd_dvp_inst                                             (.I(           rxd_dvp_i),  .O(             rxd_dvp) );
 IOBUF xPAD_i2c0_scl_inst                                            (.IO(         i2c0_scl_io), .I(                1'b0), .O(         i2c0_scl_in), .T(         i2c0_scl_oe) );
