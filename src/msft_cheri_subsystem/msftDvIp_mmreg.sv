@@ -29,6 +29,15 @@ module msftDvIp_mmreg (
 
   logic             tbre_intr_stat, tbre_intr_en;
 
+  logic [4:0]       dbg_fifo_depth;
+  logic [4:0]       dbg_fifo_ext_wr_ptr, dbg_fifo_ext_rd_ptr;
+  logic [3:0]       dbg_fifo_wr_ptr, dbg_fifo_rd_ptr;
+  logic             dbg_fifo_empty, dbg_fifo_full;
+  logic [15:0][7:0] dbg_fifo_mem;
+  logic [7:0]       dbg_fifo_wr_data, dbg_fifo_rd_data;
+  logic             dbg_fifo_wr_en, dbg_fifo_rd_en;
+ 
+
 
   //=================================================
   // Assignements
@@ -93,16 +102,56 @@ module msftDvIp_mmreg (
     end else begin
       if (rd_op) begin
         casez(reg_addr_i[7:2]) 
-          6'h0: reg_rdata_o <= tbre_start_addr;
-          6'h1: reg_rdata_o <= tbre_end_addr;
-          6'h2: reg_rdata_o <= {16'h5500, 15'h0, tbre_go};
-          6'h3: reg_rdata_o <= {tbre_epoch, tbre_stat};
-          6'h4: reg_rdata_o <= {31'h0, tbre_intr_stat};
-          6'h5: reg_rdata_o <= {31'h0, tbre_intr_en};
+          6'h0:    reg_rdata_o <= tbre_start_addr;
+          6'h1:    reg_rdata_o <= tbre_end_addr;
+          6'h2:    reg_rdata_o <= {16'h5500, 15'h0, tbre_go};
+          6'h3:    reg_rdata_o <= {tbre_epoch, tbre_stat};
+          6'h4:    reg_rdata_o <= {31'h0, tbre_intr_stat};
+          6'h5:    reg_rdata_o <= {31'h0, tbre_intr_en};
+          6'h10:   reg_rdata_o <= {dbg_fifo_empty, dbg_fifo_rd_data};
+          6'h11:   reg_rdata_o <= {22'h0, dbg_fifo_full, dbg_fifo_empty, 3'h0, dbg_fifo_depth};
           default: reg_rdata_o <= 32'h0000_0000;
         endcase
       end
     end
   end
+
+  //=================================================
+  // Debug (fast printf) FIFO
+  //=================================================
+  assign dbg_fifo_wr_ptr = dbg_fifo_ext_wr_ptr[3:0];
+  assign dbg_fifo_rd_ptr = dbg_fifo_ext_rd_ptr[3:0];
+
+  assign dbg_fifo_rd_data = dbg_fifo_mem[dbg_fifo_rd_ptr];
+  assign dbg_fifo_wr_data = reg_wdata_i[7:0];
+
+  assign dbg_fifo_depth = dbg_fifo_ext_wr_ptr - dbg_fifo_ext_rd_ptr;
+  assign dbg_fifo_empty = (dbg_fifo_depth == 0);
+  assign dbg_fifo_full  = (dbg_fifo_depth >= 16);
+
+  assign dbg_fifo_wr_en = wr_op & (reg_addr_i[7:2] == 6'h10);
+  assign dbg_fifo_rd_en = rd_op & (reg_addr_i[7:2] == 6'h10);
+
+  always_ff @(posedge clk_i or negedge rstn_i) begin
+    if (!rstn_i) begin
+      dbg_fifo_ext_rd_ptr <= 'h0;
+      dbg_fifo_ext_wr_ptr <= 'h0;
+    end else begin
+      // FIFO size is power-of-2
+      if (dbg_fifo_rd_en & ~dbg_fifo_empty) dbg_fifo_ext_rd_ptr <= dbg_fifo_ext_rd_ptr + 1;
+      if (dbg_fifo_wr_en & ~dbg_fifo_full)  dbg_fifo_ext_wr_ptr <= dbg_fifo_ext_wr_ptr + 1;
+    end
+  end
+
+  for (genvar i= 0; i < 16; i++) begin : gen_fifo_mem
+    always_ff @(posedge clk_i or negedge rstn_i) begin
+      if (!rstn_i) begin
+        dbg_fifo_mem[i]  <= 0;
+      end else begin
+        if (dbg_fifo_wr_en & ~dbg_fifo_full && (i == dbg_fifo_wr_ptr))
+          dbg_fifo_mem[i] <= dbg_fifo_wr_data;
+      end
+    end
+  end // generate
 
 endmodule
