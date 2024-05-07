@@ -174,7 +174,8 @@ ibex_top_tracing #(
   .alert_major_internal_o(alert_major_internal_o),
   .alert_major_bus_o(alert_major_bus_o),
 */
-  .core_sleep_o(core_sleep_o)
+  .core_sleep_o(core_sleep_o),
+  .cheri_fatal_err_o ()
 );
 
 //============================================
