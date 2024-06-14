@@ -1,0 +1,31 @@
+1. Clone the RISC-V OpenOCD Repository
+
+git clone git@github.com:riscv-collab/riscv-openocd.git <Repo Name>
+
+
+2. Change Directory to the Repository
+
+cd <Repo Name>
+
+
+3. Checkout the Specific Commit that is compatible with the patch
+
+git checkout 528970c47ae2157bd7077a5fda04881a024f8d8f
+
+
+4. Apply the CHERI Changes Patch
+
+patch -p1 -R < PATH_TO_PATCH/cheri_changes.patch
+
+Example: patch -p1 -R < ../cheri_changes.patch
+
+Note: Run this command in the repository's top directory.
+
+
+5. Verify Successful Patching
+
+
+6. Build and Install OpenOCD
+
+Refer to the build instructions on the GitHub page:
+[https://github.com/riscv-collab/riscv-openocd](https://github.com/riscv-collab/riscv-openocd)

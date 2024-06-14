@@ -1,0 +1,420 @@
+diff -ruN original_riscv/src/server/gdb_server.c old_riscv/src/server/gdb_server.c
+--- original_riscv/src/server/gdb_server.c	2024-06-11 11:29:11.566449000 -0700
++++ old_riscv/src/server/gdb_server.c	2024-06-11 11:42:48.588934000 -0700
+@@ -38,7 +38,6 @@
+ #include "config.h"
+ #endif
+ 
+-#include <target/riscv/debug_defines.h>
+ #include <target/breakpoints.h>
+ #include <target/target_request.h>
+ #include <target/register.h>
+@@ -122,8 +121,6 @@
+  * in helper/log.c when no gdb connections are actually active */
+ int gdb_actual_connections;
+ 
+-bool is_core_type_checked = false;
+-
+ /* set if we are sending a memory map to gdb
+  * via qXfer:memory-map:read packet */
+ /* enabled by default*/
+@@ -1177,17 +1174,6 @@
+ 		int j = gdb_reg_pos(target, i, buf_len);
+ 		tstr += sprintf(tstr, "%02x", buf[j]);
+ 	}
+-
+-
+-	if (target->cheri_core){
+-		if(reg->tag_valid){
+-			tstr += sprintf(tstr, "%02x", 1);
+-		}
+-		else {
+-			tstr += sprintf(tstr, "%02x", 0);
+-		}
+-    }
+-
+ }
+ 
+ /* copy over in register buffer */
+@@ -1223,7 +1209,6 @@
+ 	char *reg_packet;
+ 	char *reg_packet_p;
+ 	int i;
+-	uint32_t temp_size = 0;
+ 
+ #ifdef _DEBUG_GDB_IO_
+ 	LOG_DEBUG("-");
+@@ -1240,13 +1225,7 @@
+ 	for (i = 0; i < reg_list_size; i++) {
+ 		if (!reg_list[i] || reg_list[i]->exist == false || reg_list[i]->hidden)
+ 			continue;
+-
+-		if (target->cheri_core){ 
+-			reg_packet_size += DIV_ROUND_UP(reg_list[i]->size * 2, 8) * 2 + 2;
+-		}
+-		else{
+-			reg_packet_size += DIV_ROUND_UP(reg_list[i]->size, 8) * 2;
+-		}
++		reg_packet_size += DIV_ROUND_UP(reg_list[i]->size, 8) * 2;
+ 	}
+ 
+ 	assert(reg_packet_size > 0);
+@@ -1269,20 +1248,8 @@
+ 				return gdb_error(connection, retval);
+ 			}
+ 		}
+-
+-		if (target->cheri_core) {
+-			temp_size =  reg_list[i]->size;
+-			reg_list[i]->size = reg_list[i]->size * 2;
+-
+-			gdb_str_to_target(target, reg_packet_p, reg_list[i]);
+-
+-			reg_packet_p += DIV_ROUND_UP(reg_list[i]->size, 8) * 2 + 2;
+-			reg_list[i]->size = temp_size;
+-		}
+-		else {
+-			gdb_str_to_target(target, reg_packet_p, reg_list[i]);
+-			reg_packet_p += DIV_ROUND_UP(reg_list[i]->size, 8) * 2;
+-		}
++		gdb_str_to_target(target, reg_packet_p, reg_list[i]);
++		reg_packet_p += DIV_ROUND_UP(reg_list[i]->size, 8) * 2;
+ 	}
+ 
+ #ifdef _DEBUG_GDB_IO_
+@@ -1311,7 +1278,6 @@
+ 	int reg_list_size;
+ 	int retval;
+ 	char const *packet_p;
+-	uint32_t temp_size = 0;
+ 
+ #ifdef _DEBUG_GDB_IO_
+ 	LOG_DEBUG("-");
+@@ -1334,10 +1300,5 @@
+	packet_p = packet;
+ 	for (i = 0; i < reg_list_size; i++) {
+-		if (target->cheri_core) {
+-			temp_size = reg_list[i]->size;
+-			reg_list[i]->size = reg_list[i]->size * 2;
+-		}
+-
+ 		uint8_t *bin_buf;
+		if (!reg_list[i] || !reg_list[i]->exist || reg_list[i]->hidden)
+			continue;		
+@@ -1359,8 +1319,4 @@
+ 		/* advance packet pointer */
+ 		packet_p += chars;
+ 
+-		if (target->cheri_core) {
+-			reg_list[i]->size = temp_size;
+-		}
+-
+ 		free(bin_buf);
+@@ -1383,8 +1339,6 @@
+ 	struct reg **reg_list;
+ 	int reg_list_size;
+ 	int retval;
+-	uint32_t temp_size = 0;
+-
+ 
+ #ifdef _DEBUG_GDB_IO_
+ 	LOG_DEBUG("-");
+@@ -1412,26 +1366,15 @@
+ 		}
+ 	}
+ 
+-	if (target->cheri_core){
+-		temp_size = reg_list[reg_num]->size;
+-		reg_list[reg_num]->size = reg_list[reg_num]->size * 2;
+-		reg_packet = calloc(DIV_ROUND_UP(reg_list[reg_num]->size, 8) * 2 + 2, 1); /* plus two for the valid tag bit */
+-		gdb_str_to_target(target, reg_packet, reg_list[reg_num]);
+-		gdb_put_packet(connection, reg_packet, DIV_ROUND_UP(reg_list[reg_num]->size, 8) * 2 + 2);
+-	}
+-	else {
+-		reg_packet = calloc(DIV_ROUND_UP(reg_list[reg_num]->size, 8) * 2 + 1, 1); /* plus one for string termination null */
+-		gdb_str_to_target(target, reg_packet, reg_list[reg_num]);
+-		gdb_put_packet(connection, reg_packet, DIV_ROUND_UP(reg_list[reg_num]->size, 8) * 2);
+-	}
++	reg_packet = calloc(DIV_ROUND_UP(reg_list[reg_num]->size, 8) * 2 + 1, 1); /* plus one for string termination null */
++
++	gdb_str_to_target(target, reg_packet, reg_list[reg_num]);
++
++	gdb_put_packet(connection, reg_packet, DIV_ROUND_UP(reg_list[reg_num]->size, 8) * 2);
+ 
+ 	free(reg_list);
+ 	free(reg_packet);
+ 
+-	if (target->cheri_core){
+-		reg_list[reg_num]->size = temp_size;
+-	}
+-	
+ 	return ERROR_OK;
+ }
+ 
+@@ -1444,7 +1387,6 @@
+ 	struct reg **reg_list;
+ 	int reg_list_size;
+ 	int retval;
+-	uint32_t size_temp = 0;
+ 
+ #ifdef _DEBUG_GDB_IO_
+ 	LOG_DEBUG("-");
+@@ -1479,10 +1421,6 @@
+ 		return ERROR_SERVER_REMOTE_CLOSED;
+ 	}
+ 
+-	if(target->cheri_core) {
+-		size_temp = reg_list[reg_num]->size;
+-       		reg_list[reg_num]->size = size_temp * 2;
+-	}
+ 	if (chars != (DIV_ROUND_UP(reg_list[reg_num]->size, 8) * 2)) {
+ 		LOG_ERROR("gdb sent %zu bits for a %" PRIu32 "-bit register (%s)",
+ 				chars * 4, reg_list[reg_num]->size, reg_list[reg_num]->name);
+@@ -1501,11 +1439,6 @@
+ 		return gdb_error(connection, retval);
+ 	}
+ 
+-
+-	if(target->cheri_core) {
+-		reg_list[reg_num]->size = size_temp;
+-	}
+-
+ 	gdb_put_packet(connection, "OK", 2);
+ 
+ 	free(bin_buf);
+@@ -3445,21 +3378,6 @@
+ 
+ 	target = get_target_from_connection(connection);
+ 
+-	if (is_core_type_checked == false){
+-		target->cheri_core = false;
+-		
+-		struct reg **reg_list;
+-		int reg_list_size;
+-
+-		retval = target_get_gdb_reg_list_noread(target, &reg_list, &reg_list_size, REG_CLASS_ALL);
+-		reg_list[0]->type->is_cheri(target);
+-		
+-		is_core_type_checked = true;
+-	}
+-
+-
+-	// Write a function here that an read the correct
+-
+ 	/* drain input buffer. If one of the packets fail, then an error
+ 	 * packet is replied, if applicable.
+ 	 *
+diff -ruN original_riscv/src/target/register.h old_riscv/src/target/register.h
+--- original_riscv/src/target/register.h	2024-06-11 11:36:01.859185000 -0700
++++ old_riscv/src/target/register.h	2024-06-11 11:42:49.253763000 -0700
+@@ -120,7 +120,6 @@
+ };
+ 
+ struct reg {
+-	bool tag_valid;
+ 	/* Canonical name of the register. */
+ 	const char *name;
+ 	/* Number that gdb uses to access this register. */
+@@ -163,7 +162,6 @@
+ struct reg_arch_type {
+ 	int (*get)(struct reg *reg);
+ 	int (*set)(struct reg *reg, uint8_t *buf);
+-	bool (*is_cheri)(struct target *target);
+ };
+ 
+ struct reg *register_get_by_number(struct reg_cache *first,
+diff -ruN original_riscv/src/target/riscv/debug_defines.h old_riscv/src/target/riscv/debug_defines.h
+--- original_riscv/src/target/riscv/debug_defines.h	2024-06-11 11:30:06.113761000 -0700
++++ old_riscv/src/target/riscv/debug_defines.h	2024-06-11 11:42:49.270364000 -0700
+@@ -2255,7 +2255,6 @@
+ #define DM_SBDATA3_DATA_LENGTH              32
+ #define DM_SBDATA3_DATA                     (0xffffffffU << DM_SBDATA3_DATA_OFFSET)
+ #define DM_CUSTOM                           0x1f
+-#define DM_CUSTOM_VAL_CAP_READ_MASK         0x00010000
+ #define DM_CUSTOM0                          0x70
+ #define DM_CUSTOM1                          0x71
+ #define DM_CUSTOM2                          0x72
+diff -ruN original_riscv/src/target/riscv/riscv-013.c old_riscv/src/target/riscv/riscv-013.c
+--- original_riscv/src/target/riscv/riscv-013.c	2024-06-11 11:32:30.959816000 -0700
++++ old_riscv/src/target/riscv/riscv-013.c	2024-06-11 11:42:49.295608000 -0700
+@@ -816,12 +816,6 @@
+ 	riscv_reg_t value = 0;
+ 	uint32_t v;
+ 	unsigned offset = index * size_bits / 32;
+-
+-	if (target->cheri_core){
+-		size_bits = size_bits * 2;
+-	}
+-	
+-
+ 	switch (size_bits) {
+ 		default:
+ 			LOG_ERROR("Unsupported size: %d bits", size_bits);
+@@ -840,28 +834,16 @@
+ static int write_abstract_arg(struct target *target, unsigned index,
+ 		riscv_reg_t value, unsigned size_bits)
+ {
+-	if(target->cheri_core) {
+-		size_bits = size_bits * 2;
+-
+-		// This will assert the valid bit for the capability 
+-		dmi_write(target, DM_CUSTOM, 0x00000001);
+-
+-		LOG_DEBUG("value: 0x%lx", value);
+-
+-	}
+-
+ 	unsigned offset = index * size_bits / 32;
+ 	switch (size_bits) {
+ 		default:
+ 			LOG_ERROR("Unsupported size: %d bits", size_bits);
+ 			return ERROR_FAIL;
+ 		case 64:
+-				dmi_write(target, DM_DATA0 + offset + 1, value >> 32);
+-
++			dmi_write(target, DM_DATA0 + offset + 1, value >> 32);
+ 			/* falls through */
+ 		case 32:
+-				dmi_write(target, DM_DATA0 + offset, value);
+-
++			dmi_write(target, DM_DATA0 + offset, value);
+ 	}
+ 	return ERROR_OK;
+ }
+@@ -4056,10 +4038,6 @@
+ static int riscv013_get_register(struct target *target,
+ 		riscv_reg_t *value, int rid)
+ {
+-	struct reg *reg = &target->reg_cache->reg_list[rid];
+-	uint32_t tag_bit;
+-	reg->tag_valid = false;
+-
+ 	LOG_DEBUG("[%s] reading register %s", target_name(target),
+ 			gdb_regno_name(rid));
+ 
+@@ -4083,20 +4061,6 @@
+ 			*value = -1;
+ 	}
+ 
+-	if (target->cheri_core){
+-		dmi_read(target, &tag_bit, DM_CUSTOM);
+-		tag_bit = tag_bit & DM_CUSTOM_VAL_CAP_READ_MASK;
+-
+-		if(tag_bit > 0){
+-			reg->tag_valid = true;
+-
+-		}
+-		else {
+-			reg->tag_valid = false;
+-
+-		}
+-    }
+-
+ 	return result;
+ }
+ 
+diff -ruN original_riscv/src/target/riscv/riscv.c old_riscv/src/target/riscv/riscv.c
+--- original_riscv/src/target/riscv/riscv.c	2024-06-11 11:35:16.635793000 -0700
++++ old_riscv/src/target/riscv/riscv.c	2024-06-11 11:42:49.300575000 -0700
+@@ -1176,13 +1176,7 @@
+ 	for (uint32_t number = 0; number < target->reg_cache->num_regs; number++) {
+ 		struct reg *reg = &target->reg_cache->reg_list[number];
+ 		if (reg->valid && reg->dirty) {
+-			uint64_t value = 0;
+-			if(target->cheri_core) {
+-				value = buf_get_u64(reg->value, 0, reg->size * 2);
+-			}
+-			else {
+-				value = buf_get_u64(reg->value, 0, reg->size);
+-			}
++			uint64_t value = buf_get_u64(reg->value, 0, reg->size);
+ 			LOG_DEBUG("[%s] %s is dirty; write back 0x%" PRIx64,
+ 				  target_name(target), reg->name, value);
+ 			int result = r->set_register(target, number, value);
+@@ -4067,38 +4061,6 @@
+ 	}
+ }
+ 
+-static bool is_core_cheri(struct target *target)
+-{
+-
+-	riscv_reg_t mvendorid_value;
+-	riscv_reg_t marchid_value;
+-
+-
+-
+-	riscv_get_register(target, &mvendorid_value, CSR_MVENDORID + GDB_REGNO_CSR0); // mvendorid
+-
+-	riscv_get_register(target, &marchid_value, CSR_MARCHID + GDB_REGNO_CSR0); // marchid
+-
+-
+-	if (((mvendorid_value & 0x3FF) == 0x255) && ((marchid_value & 0xFFF) == 0xCE1)){
+-
+-		LOG_DEBUG("This is a CHERI CORE");
+-		target->cheri_core = true;
+-		return true;
+-
+-	}
+-	else {
+-
+-		LOG_DEBUG("This is NOT a CHERI CORE");
+-		target->cheri_core = false;
+-		return false;
+-	}
+-
+-
+-
+-}
+-
+-
+ static int register_get(struct reg *reg)
+ {
+ 	riscv_reg_info_t *reg_info = reg->arch_info;
+@@ -4119,23 +4081,10 @@
+ 		int result = riscv_get_register(target, &value, reg->number);
+ 		if (result != ERROR_OK)
+ 			return result;
+-
+-		if(target->cheri_core) {
+-			buf_set_u64(reg->value, 0, reg->size * 2, value);
+-		}
+-		else {
+-			buf_set_u64(reg->value, 0, reg->size, value);
+-		}
++		buf_set_u64(reg->value, 0, reg->size, value);
+ 	}
+ 	reg->valid = gdb_regno_cacheable(reg->number, false);
+-	
+-	char *str;
+-	if(target->cheri_core) {
+-		str = buf_to_hex_str(reg->value, reg->size * 2);
+-	}
+-	else {
+-		str = buf_to_hex_str(reg->value, reg->size);
+-	}
++	char *str = buf_to_hex_str(reg->value, reg->size);
+ 	LOG_DEBUG("[%s] read 0x%s from %s (valid=%d)", target_name(target),
+ 			str, reg->name, reg->valid);
+ 	free(str);
+@@ -4192,8 +4141,7 @@
+ 
+ static struct reg_arch_type riscv_reg_arch_type = {
+ 	.get = register_get,
+-	.set = register_set,
+-	.is_cheri = is_core_cheri
++	.set = register_set
+ };
+ 
+ struct csr_info {
+diff -ruN original_riscv/src/target/target.h old_riscv/src/target/target.h
+--- original_riscv/src/target/target.h	2024-06-11 11:37:02.455329000 -0700
++++ old_riscv/src/target/target.h	2024-06-11 11:42:49.342522000 -0700
+@@ -217,8 +217,6 @@
+ 
+ 	/* The semihosting information, extracted from the target. */
+ 	struct semihosting *semihosting;
+-
+-	bool cheri_core;
+ };
+ 
+ struct target_list {
