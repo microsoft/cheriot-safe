@@ -6,7 +6,31 @@ set DesignRoot [lindex $argv 0 ]
 set netlistDir [lindex $argv 1 ]
 set files      [lindex $argv 2 ]
 set xdcfiles   [lindex $argv 3 ]
-set Sysclk33M  [lindex $argv 4 ]
+
+
+set SysclkFreq [lindex $argv 4 ]
+
+switch $SysclkFreq {
+  20 { 
+   set SysclkDiv1GHz 50
+   }
+  25 { 
+   set SysclkDiv1GHz 40 
+   }
+  30 { 
+   set SysclkDiv1GHz 33 
+   }
+  33 { 
+   set SysclkDiv1GHz 30 
+   }
+  default { 
+   set SysclkDiv1GHz 50
+   }
+}
+
+puts "--> SysclkPeriod is $SysclkDiv1GHz ns"
+set SysclkPeriod [expr $SysclkDiv1GHz + 0.0]
+set SysclkWaveform [list 0 [expr $SysclkPeriod/2.0]]
 
 #==================================================
 # FPGA Build
@@ -86,7 +110,7 @@ synth_design\
   -verilog_define LOAD_FPGA_MEMORIES\
   -verilog_define SYNTHESIS\
   -include_dirs $STITCH_INCLUDE_LIST\
-  -generic Sysclk33M=$Sysclk33M
+  -generic SysclkDiv1GHz=$SysclkDiv1GHz
 
 write_checkpoint -force ./$netlistDir/${TOPLEVEL}_synthesized.dcp
 report_utilization -file ./$netlistDir/post-syn_reports/${TOPLEVEL}_utilization_synth.rpt

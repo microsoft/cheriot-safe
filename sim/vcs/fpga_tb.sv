@@ -22,7 +22,7 @@ module fpga_tb ();
 
 
   msftDvIp_cheri_arty7_fpga #(
-    .Sysclk33M(1)
+    .SysclkDiv1GHz(33)
   ) dut (
     .board_clk_i    (board_clk),
     .board_rstn_i   (rst_n),

@@ -1,14 +1,15 @@
 (* CORE_GENERATION_INFO = "clock_generator,clk_wiz_v3_4,{component_name=clock_generator,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=MMCM_ADV,num_out_clk=6,clkin1_period=10.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=false,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=MANUAL,manual_override=false}" *)
 
 module msftDvIp_mmcm_arty7_0 # (
-  parameter bit Sysclk33M = 1'b1
+  parameter int SysclkDiv1GHz = 50 
  ) (// Clock in ports
   input         board_clk_i,
   // Clock out ports
   output        sysclk_o,
   output        clk200Mhz_o,
   // Status and control signals
-  input         RESETn_i
+  input         RESETn_i,
+  output        locked
  );
 
   // Clocking primitive
@@ -19,7 +20,6 @@ module msftDvIp_mmcm_arty7_0 # (
   wire [15:0] do_unused;
   wire        drdy_unused;
   wire        psdone_unused;
-  wire        locked_unused;
   wire        clkfbout;
   wire        clkfbout_buf;
   wire        clkfboutb_unused;
@@ -39,7 +39,7 @@ module msftDvIp_mmcm_arty7_0 # (
 
 `ifdef XILINX_PLL_MODEL__
   // This model is to be used only for simulation when the Xilinx Simulation model is not available. 
-  reg [2:0] div_clk;
+  reg [3:0] div_clk;
   reg       clkout;
   `ifdef VERILATOR
   assign   sysclk_o = board_clk_i;
@@ -47,42 +47,30 @@ module msftDvIp_mmcm_arty7_0 # (
   assign    sysclk_o = clkout;
   `endif
 
+ localparam SysclkDiv100 = SysclkDiv1GHz/10;
+
   assign clk200Mhz_o = board_clk_i & RESETn_i;
 
-  if (Sysclk33M) begin 
-    always @(posedge board_clk_i, negedge RESETn_i)
-    begin
-      if(~RESETn_i) begin
-        div_clk <= 0;
-        clkout  <= 1'b0;
+  always @(posedge board_clk_i, negedge RESETn_i)
+  begin
+    if(~RESETn_i) begin
+      div_clk <= 0;
+      clkout  <= 1'b0;
+    end else begin
+      if(div_clk == (SysclkDiv100-1)) begin
+        div_clk <= 3'h0;
       end else begin
-        if(div_clk == 3'h2) begin
-          div_clk <= 3'h0;
-        end else begin
-          div_clk <= div_clk + 1'b1;
-        end 
-        clkout <= (div_clk <=1);     // div 3, let's not worry about duty cycle
-      end
-    end
-  end else begin
-    always @(posedge board_clk_i, negedge RESETn_i)
-    begin
-      if(~RESETn_i) begin
-        div_clk <= 0;
-        clkout  <= 1'b0;
-      end else begin
-        if(div_clk == 3'h4) begin
-          div_clk <= 3'h0;
-        end else begin
-          div_clk <= div_clk + 1'b1;
-        end 
-        clkout <= (div_clk <=2);     // div 5, let's not worry about duty cycle
-      end
+        div_clk <= div_clk + 1'b1;
+      end 
+      // don't worry about duty cycle here since this would be for RTL sim only. 
+      clkout <= (div_clk <= (sysclkDiv100-1)/2);  
     end
   end
 
+  assign locked = 1'b1;
+
 `else
-localparam int unsigned Clk1Div = Sysclk33M ? 30 : 50;
+  localparam int SysclkDivPLL = SysclkDiv1GHz;
 
   MMCME2_ADV
   #(.BANDWIDTH            ("OPTIMIZED"),
@@ -101,7 +89,7 @@ localparam int unsigned Clk1Div = Sysclk33M ? 30 : 50;
 //    .CLKOUT0_DUTY_CYCLE   (0.500),
 //    .CLKOUT0_USE_FINE_PS  ("FALSE"),
 
-    .CLKOUT1_DIVIDE       (Clk1Div),
+    .CLKOUT1_DIVIDE       (SysclkDivPLL),
     .CLKOUT1_PHASE        (0.000),
     .CLKOUT1_DUTY_CYCLE   (0.500),
     .CLKOUT1_USE_FINE_PS  ("FALSE"),
@@ -164,7 +152,7 @@ localparam int unsigned Clk1Div = Sysclk33M ? 30 : 50;
     .PSINCDEC            (1'b0),
     .PSDONE              (psdone_unused),
     // Other control and status signals
-    .LOCKED              (locked_unused),
+    .LOCKED              (locked),
     .CLKINSTOPPED        (clkinstopped_unused),
     .CLKFBSTOPPED        (clkfbstopped_unused),
     .PWRDWN              (1'b0),

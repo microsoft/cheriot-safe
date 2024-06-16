@@ -8,7 +8,8 @@
 set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 } [get_ports { board_clk_i }]; #IO_L12P_T1_MRCC_35 Sch=gclk[100]
 create_clock -add -name board_clk_pin -period 10.00 -waveform {0 5} [get_ports { board_clk_i }];
 
-create_clock -period 50.000 -name sys_clk -waveform {0.000 25.000} [get_nets msftDvIp_mmcm_arty7_0_i/clkout1]
+#create_clock -period 50.000 -name sys_clk -waveform {0.000 25.000} [get_nets msftDvIp_mmcm_arty7_0_i/clkout1]
+create_clock -period $SysclkPeriod -name sys_clk -waveform $SysclkWaveform [get_nets msftDvIp_mmcm_arty7_0_i/clkout1]
 
 create_clock -period 5.000 -name clk_200Mhz  -waveform {0.000 2.500} [get_pins msftDvIp_mmcm_arty7_0_i/clk200Mhz]
 create_clock -period 20.000 -name tck_clk_pin -waveform {0.000 10.000} [get_pins xPAD_TCK_inst/O]

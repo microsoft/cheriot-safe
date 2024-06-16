@@ -10,7 +10,7 @@
 // Module msftDvIp_cheri_arty7_fpga Definition
 // ==================================================
 module msftDvIp_cheri_arty7_fpga # (
-  parameter bit Sysclk33M = 1'b1
+  parameter int SysclkDiv1GHz = 50
 )(
   input                                      board_clk_i,
   input                                      board_rstn_i,
@@ -251,6 +251,8 @@ wire          phy_rx_clk;
 wire          phy_tx_clk;
 
 wire          clk_25m;
+wire          sysclk_locked;
+
 //wire  [1:0]   eth_irq;
 //wire          eth_rx_irq, eth_tx_irq;
 
@@ -266,12 +268,13 @@ assign rstn = board_rstn;
 // ==================================================
 // Instance msftDvIp_mmcm_arty7_0
 // ==================================================
-msftDvIp_mmcm_arty7_0 #(.Sysclk33M(Sysclk33M)
+msftDvIp_mmcm_arty7_0 #(.SysclkDiv1GHz(SysclkDiv1GHz)
   ) msftDvIp_mmcm_arty7_0_i (
   .board_clk_i                   ( board_clk                                ),
   .sysclk_o                      ( sysclk                                   ),
   .clk200Mhz_o                   ( clk200Mhz                                ),
-  .RESETn_i                      ( board_rstn                               )
+  .RESETn_i                      ( board_rstn                               ),
+  .locked                        ( sysclk_locked                            )
   );
 
 // ethernet 25MHz refclk generation
@@ -291,6 +294,7 @@ msftDvIp_mmcm_arty7_1 msftDvIp_mmcm_arty7_1_i (
 msftDvIp_led_alive msftDvIp_led_alive_i (
   .clk_i                         ( clk200Mhz                                ),
   .rstn_i                        ( rstn                                     ),
+  .locked                        ( sysclk_locked                            ),
   .alive_o                       ( alive                                    )
 );
 
