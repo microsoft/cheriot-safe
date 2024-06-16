@@ -28,9 +28,11 @@ switch $SysclkFreq {
    }
 }
 
-puts "--> SysclkPeriod is $SysclkDiv1GHz ns"
-set SysclkPeriod [expr $SysclkDiv1GHz + 0.0]
+ # give a little extra margin
+set SysclkPeriod [expr $SysclkDiv1GHz - 0.5] 
 set SysclkWaveform [list 0 [expr $SysclkPeriod/2.0]]
+
+puts "--> SysclkPeriod is $SysclkPeriod ns, waveform is {$SysclkWaveform}"
 
 #==================================================
 # FPGA Build

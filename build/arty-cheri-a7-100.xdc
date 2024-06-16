@@ -19,7 +19,7 @@ create_clock -add -name eth_tx_clk_pin -period 40.00 -waveform {0 20} [get_ports
 create_clock -add -name eth_rx_clk_pin -period 40.00 -waveform {0 20} [get_ports { eth_rx_clk_i }];
 
 set_property CLOCK_DEDICATED_ROUTE FALSE [ get_nets {sck0} ];
-set_property CLOCK_DEDICATED_ROUTE FALSE [ get_nets {sck0_i_IBUF} ];
+#set_property CLOCK_DEDICATED_ROUTE FALSE [ get_nets {sck0_i_IBUF} ];
 
 set_clock_groups -asynchronous \
   -group {board_clk_pin} \
