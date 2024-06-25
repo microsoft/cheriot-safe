@@ -63,7 +63,7 @@ module msftDvIp_mmcm_arty7_0 # (
         div_clk <= div_clk + 1'b1;
       end 
       // don't worry about duty cycle here since this would be for RTL sim only. 
-      clkout <= (div_clk <= (sysclkDiv100-1)/2);  
+      clkout <= (div_clk <= (SysclkDiv100-1)/2);  
     end
   end
 
