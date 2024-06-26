@@ -1,0 +1,12 @@
+#!/usr/bin/sh
+DESIGNROOT="../"
+NETLISTDIR="RUN_$(date +%s)"
+SysclkFreq=30
+mkdir $NETLISTDIR
+
+rm -f build.passed
+cp -f firmware/cpu0_irom_30mhz.vhx firmware/cpu0_irom.vhx
+
+#vnc run  -Ir -wl -r vivado RAM/64000 x86_64 redhat7 --  
+vivado -mode batch -source cheri_fpga.tcl -log $NETLISTDIR/vivado.log -tclargs $DESIGNROOT $NETLISTDIR ./read_design.tcl ./arty-cheri-a7-100.xdc $SysclkFreq
+
