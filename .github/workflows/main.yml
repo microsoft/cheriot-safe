@@ -1,0 +1,26 @@
+name: CHERIoT SAFE Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: sudo apt install -y verilator
+    - name: Build simulator
+      run: |
+        verilator --version
+        cd sim/verilator
+        ./vgen_stdin
+        ./vcomp
