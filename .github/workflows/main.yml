@@ -1,0 +1,38 @@
+name: CHERIoT SAFE Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  run-tests:
+    # Ubuntu 24.04 is the first Ubuntu to be packaged with a working Verilator
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: sudo apt install -y verilator
+    - name: Build simulator
+      run: |
+        verilator --version
+        cd sim/verilator
+        ./vgen_stdin
+        ./vcomp
+    - name: Fetch dev container
+      run: docker pull ghcr.io/cheriot-platform/devcontainer:latest
+    - name: Build test suite
+      run: |
+        mkdir firmware
+        echo "Building firmware in dev container"
+        docker run --rm --mount source=$(pwd)/firmware,target=/firmware/,type=bind ghcr.io/cheriot-platform/devcontainer:latest /bin/sh -c "cd /tmp/ && git clone --recurse http://github.com/Microsoft/cheriot-rtos && cd cheriot-rtos/tests && xmake f --sdk=/cheriot-tools --board=ibex-safe-simulator && xmake && xmake run && sudo cp build/cheriot/cheriot/release/firmware/* /firmware/"
+        echo "Copied firmware to host"
+        ls firmware
+    - name: Run test suite on new simulator
+      run: sim/verilator/obj_dir/Vswci_vtb
