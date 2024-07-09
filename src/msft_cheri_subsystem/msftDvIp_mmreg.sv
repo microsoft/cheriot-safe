@@ -25,7 +25,7 @@ module msftDvIp_mmreg (
   logic [31:0]      tbre_end_addr;
   logic             tbre_go;
   logic [30:0]      tbre_epoch;
-  logic             tbre_done, tbre_stat_q;
+  logic             tbre_done, tbre_stat_q, tbre_stat;
 
   logic             tbre_intr_stat, tbre_intr_en;
 
@@ -36,7 +36,8 @@ module msftDvIp_mmreg (
   logic [15:0][7:0] dbg_fifo_mem;
   logic [7:0]       dbg_fifo_wr_data, dbg_fifo_rd_data;
   logic             dbg_fifo_wr_en, dbg_fifo_rd_en;
- 
+
+  logic             wr_op, rd_op;
 
 
   //=================================================
@@ -62,17 +63,18 @@ module msftDvIp_mmreg (
       tbre_start_addr <= 32'h0;
       tbre_end_addr   <= 32'h0;
       tbre_go         <= 1'b0;
-      tbre_epoch      <= 8'h0;
+      tbre_epoch      <= 31'h0;
       tbre_stat_q     <= 1'b0;
       tbre_intr_en    <= 1'b0;
       tbre_intr_stat  <= 1'b0;
 
     end else begin
       if(wr_op) begin
-        casez(reg_addr_i[7:2]) 
+        case(reg_addr_i[7:2])
           6'h0: tbre_start_addr <= reg_wdata_i;
           6'h1: tbre_end_addr   <= reg_wdata_i;
           6'h5: tbre_intr_en    <= reg_wdata_i[0];
+          default:;
         endcase
       end
 
@@ -108,7 +110,7 @@ module msftDvIp_mmreg (
           6'h3:    reg_rdata_o <= {tbre_epoch, tbre_stat};
           6'h4:    reg_rdata_o <= {31'h0, tbre_intr_stat};
           6'h5:    reg_rdata_o <= {31'h0, tbre_intr_en};
-          6'h10:   reg_rdata_o <= {dbg_fifo_empty, dbg_fifo_rd_data};
+          6'h10:   reg_rdata_o <= {23'h0, dbg_fifo_empty, dbg_fifo_rd_data};
           6'h11:   reg_rdata_o <= {22'h0, dbg_fifo_full, dbg_fifo_empty, 3'h0, dbg_fifo_depth};
           default: reg_rdata_o <= 32'h0000_0000;
         endcase
@@ -153,5 +155,8 @@ module msftDvIp_mmreg (
       end
     end
   end // generate
+
+  logic _unused_signals;
+  assign _unused_signals = |reg_addr_i[31:8] | |reg_addr_i[1:0] | |mmreg_coreout_i[63:1];
 
 endmodule
