@@ -106,9 +106,8 @@ module msftDvIp_mmreg (
         casez(reg_addr_i[7:2]) 
           6'h0:    reg_rdata_o <= tbre_start_addr;
           6'h1:    reg_rdata_o <= tbre_end_addr;
-          6'h2:    reg_rdata_o <= {16'h5500, 15'h0, tbre_go};
+          6'h2:    reg_rdata_o <= {32'h55000000};
           6'h3:    reg_rdata_o <= {tbre_epoch, tbre_stat};
-          6'h4:    reg_rdata_o <= {31'h0, tbre_intr_stat};
           6'h5:    reg_rdata_o <= {31'h0, tbre_intr_en};
           6'h10:   reg_rdata_o <= {23'h0, dbg_fifo_empty, dbg_fifo_rd_data};
           6'h11:   reg_rdata_o <= {22'h0, dbg_fifo_full, dbg_fifo_empty, 3'h0, dbg_fifo_depth};
