@@ -73,6 +73,9 @@ module msftDvIp_mmreg (
         case(reg_addr_i[7:2])
           6'h0: tbre_start_addr <= reg_wdata_i;
           6'h1: tbre_end_addr   <= reg_wdata_i;
+          // Used to clear the interrupt status register when interrupts
+          // disabled.
+          6'h4: tbre_intr_stat  <= 1'b0;
           6'h5: tbre_intr_en    <= reg_wdata_i[0];
           default:;
         endcase
@@ -108,6 +111,9 @@ module msftDvIp_mmreg (
           6'h1:    reg_rdata_o <= tbre_end_addr;
           6'h2:    reg_rdata_o <= {32'h55000000};
           6'h3:    reg_rdata_o <= {tbre_epoch, tbre_stat};
+          // This is used to poll the interrupt status when interrupts are
+          // disabled.
+          6'h4:    reg_rdata_o <= {31'h0, (~tbre_intr_en ? tbre_intr_stat : 1'b0)};
           6'h5:    reg_rdata_o <= {31'h0, tbre_intr_en};
           6'h10:   reg_rdata_o <= {23'h0, dbg_fifo_empty, dbg_fifo_rd_data};
           6'h11:   reg_rdata_o <= {22'h0, dbg_fifo_full, dbg_fifo_empty, 3'h0, dbg_fifo_depth};
