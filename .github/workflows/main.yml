@@ -30,8 +30,9 @@ jobs:
     - name: Build test suite
       run: |
         mkdir firmware
+        chmod a+rwx,g+s firmware
         echo "Building firmware in dev container"
-        docker run --rm --mount source=$(pwd)/firmware,target=/firmware/,type=bind ghcr.io/cheriot-platform/devcontainer:latest /bin/sh -c "cd /tmp/ && git clone --recurse http://github.com/Microsoft/cheriot-rtos && cd cheriot-rtos/tests && xmake f --sdk=/cheriot-tools --board=ibex-safe-simulator && xmake && xmake run && sudo cp build/cheriot/cheriot/release/firmware/* /firmware/"
+        docker run --rm --mount source=$(pwd)/firmware,target=/firmware/,type=bind ghcr.io/cheriot-platform/devcontainer:latest /bin/sh -c "cd /tmp/ && git clone --recurse http://github.com/Microsoft/cheriot-rtos && cd cheriot-rtos/tests && xmake f --sdk=/cheriot-tools --board=ibex-safe-simulator && xmake && xmake run && cp build/cheriot/cheriot/release/firmware/* /firmware/"
         echo "Copied firmware to host"
         ls firmware
     - name: Run test suite on new simulator
