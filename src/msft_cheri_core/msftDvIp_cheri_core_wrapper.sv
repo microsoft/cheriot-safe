@@ -287,7 +287,6 @@ assign CPCC = `CHERI_PCC_PATH.pcc_cap_q;
 typedef struct packed {
   logic VALID;
   logic ERROR;
-  logic U1;
   logic U0;
   logic SE;
   logic US;
@@ -309,7 +308,6 @@ typedef struct packed {
 function cap_bits_t getFullCap(pcc_cap_t pcc_cap, input [31:0] addr);
   getFullCap.VALID = pcc_cap.valid;
   getFullCap.ERROR = CC_vio;
-  getFullCap.U1    = pcc_cap.perms[12];
   getFullCap.U0    = pcc_cap.perms[11];
   getFullCap.SE    = pcc_cap.perms[10];
   getFullCap.US    = pcc_cap.perms[9];
@@ -333,9 +331,7 @@ function cap_bits_t getCap(reg_cap_t cap, input [31:0] addr);
   getCap.VALID = cap.valid;
   getCap.ERROR = CC_vio;
   getCap.GL=cap.cperms[5]; 
-  getCap.U1=1'b0;
   getCap.U0=1'b0;
-  getCap.U1=1'b0; 
   getCap.EX=1'b0; 
   getCap.SR=1'b0; 
   getCap.SE=1'b0; 
