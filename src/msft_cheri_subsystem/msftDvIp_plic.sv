@@ -80,8 +80,8 @@ module msftDvIp_plic #(
   for (genvar i = 0; i < nIntrSrc; i++) begin : g_pending
     assign irq_sig[i] = intr_src_type_reg[i] ? irqs_i[i] & ~irqs_q[i] : irqs_i[i];   // edge or level triggering
 
-    assign claim_dec[i]      = claim_event && (intr_id == i+1);
-    assign completion_dec[i] = completion_event  && (reg_wdata_i[IntrIdW-1:0] == i+1);
+    assign claim_dec[i]      = claim_event && (intr_id == i);
+    assign completion_dec[i] = completion_event  && (reg_wdata_i[IntrIdW-1:0] == i);
 
     always_ff @(posedge clk_i or negedge rstn_i) begin
       if (!rstn_i) begin
@@ -113,7 +113,7 @@ module msftDvIp_plic #(
 
   for (genvar i = 0; i < 32; i++) begin : gen_tree_inputs
     if (i < nIntrSrc) begin
-      assign id_tree[0][i]  = i+1;
+      assign id_tree[0][i]  = i;
       assign pri_tree[0][i] = (intr_pending[i] & intr_enable_reg[i]) ? intr_pri_reg[i] : 0;
     end else begin
       assign id_tree[0][i]  = 0;
