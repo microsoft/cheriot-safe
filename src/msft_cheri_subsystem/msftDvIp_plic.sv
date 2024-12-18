@@ -20,7 +20,7 @@ module msftDvIp_plic #(
 
   localparam IntrIdW      = $clog2(nIntrSrc)+1;
 
-  localparam PriRegAddrBase = 26'h4 >> 2; 
+  localparam PriRegAddrBase = 26'h0 >> 2; 
   localparam EnableRegAddr  = 26'h2000 >> 2;
   localparam ThresRegAddr   = 26'h200000 >> 2;
   localparam ClaimRegAddr   = 26'h200004 >> 2;

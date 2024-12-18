@@ -44,7 +44,8 @@ module msftDvIp_tcdev_wrapper (
   logic [31:0] rdata_plic, rdata_mmreg, rdata_clint, rdata_eth_mac;     
   logic        eth_tx_irq, eth_rx_irq;
 
-  assign irq_to_plic = {28'h0, eth_rx_irq, eth_tx_irq, irq_periph_i, irq_tbre}; 
+  // PLIC says we can't use irq #0 since ID==1 means no interrupt..
+  assign irq_to_plic = {27'h0, eth_rx_irq, eth_tx_irq, irq_periph_i, irq_tbre, 1'b0}; 
 
   assign reg_ready_o = 1'b1;
 
