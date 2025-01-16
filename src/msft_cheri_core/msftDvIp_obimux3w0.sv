@@ -557,19 +557,19 @@ module msftDvIp_obimux3w0 #(
   output                dbg_gnt_o,
   input [31:0]          dbg_addr_i,
   input [3:0]           dbg_be_i,
-  input [32:0]          dbg_wdata_i,               // QQQ change later to be 65 bit compatible
+  input [DataWidth-1:0] dbg_wdata_i,               // QQQ change later to be 65 bit compatible
   input                 dbg_we_i,
 
-  output [32:0]         dbg_rdata_o,               // QQQ
+  output [DataWidth-1:0] dbg_rdata_o,               // QQQ
   output                dbg_rvalid_o,
   output                dbg_error_o,
 
   output                DBGMEM_EN_o,
   output [31:0]         DBGMEM_ADDR_o,
-  output [32:0]         DBGMEM_WDATA_o,            // QQQ
+  output [DataWidth-1:0] DBGMEM_WDATA_o,            // QQQ
   output                DBGMEM_WE_o,
   output [3:0]          DBGMEM_BE_o,
-  input  [32:0]         DBGMEM_RDATA_i,            // QQQ 
+  input  [DataWidth-1:0] DBGMEM_RDATA_i,            // QQQ 
   input                 DBGMEM_READY_i,
   input                 DBGMEM_ERROR_i,
 
@@ -677,6 +677,7 @@ module msftDvIp_obimux3w0 #(
   logic [nSLV-1:0]       dbgm_req;
   logic [31:0]           dbgm_addr;
   logic [3:0]            dbgm_be;
+  logic                  dbgm_is_cap;
   logic [DataWidth-1:0]  dbgm_wdata; 
   logic                  dbgm_we; 
   logic [nSLV-1:0]       dbgm_gnt;
@@ -732,7 +733,6 @@ module msftDvIp_obimux3w0 #(
 
   logic [DataWidth-1:0]   instr_rdata;
   logic [DataWidth-1:0]   dbg_rdata, dbg_wdata;
-  logic [DataWidth-1:0]   DBGMEM_WDATA, DBGMEM_RDATA;
   logic [nMSTR-1:0][31:0] m2s_wdata32; 
 
   assign cpud_gnt = {axi_gnt[0], dram_gnt[0] , iram_gnt[0], irom_gnt[0], tcdev_gnt[0], dbgmem_gnt[0]};
@@ -752,27 +752,22 @@ module msftDvIp_obimux3w0 #(
 
   assign m2s_addr   = {dbgm_addr, cpui_addr, cpud_addr};      // shared
   assign m2s_be     = {dbgm_be, cpui_be, cpud_be};            // shared
-  assign m2s_is_cap = {1'b0, 1'b0, cpud_is_cap};              // shared
+  assign m2s_is_cap = {dbgm_is_cap, 1'b0, cpud_is_cap};              // shared
   assign m2s_we     = {dbgm_we, cpui_we, cpud_we};            // shared
   assign m2s_wdata  = {dbgm_wdata, cpui_wdata, cpud_wdata};   // shared
 
   // Data Width Adaptation
   assign instr_rdata_o = instr_rdata[31:0];
 
-  assign dbg_rdata_o   = {dbg_rdata[DataWidth-1], dbg_rdata[31:0]};   // QQQ
+  assign dbg_rdata_o   = dbg_rdata;   // QQQ
+  assign dbg_wdata     = dbg_wdata_i;
 
   if (DataWidth == 65) begin
-    assign dbg_wdata   = {33'h0, dbg_wdata_i};              // QQQ
     assign axi_rdata   = {33'h0, axi_rdata32};
     assign tcdev_rdata = {33'h0,tcdev_rdata32};
-    assign DBGMEM_WDATA_o = DBGMEM_WDATA[32:0];
-    assign DBGMEM_RDATA = {32'h0, DBGMEM_RDATA_i};
   end else begin
-    assign dbg_wdata   = dbg_wdata_i;
     assign axi_rdata   = {1'h0, axi_rdata32};
     assign tcdev_rdata = {1'h0,tcdev_rdata32};
-    assign DBGMEM_WDATA_o = DBGMEM_WDATA;
-    assign DBGMEM_RDATA = DBGMEM_RDATA_i;
   end
 
   for (genvar i = 0; i < nMSTR; i++) begin : gen_m2s_wdata32
@@ -840,7 +835,7 @@ module msftDvIp_obimux3w0 #(
     .mstr_gnt_o      (dbg_gnt_o),
     .mstr_addr_i     (dbg_addr_i),
     .mstr_be_i       (dbg_be_i),
-    .mstr_is_cap_i   (1'b0),
+    .mstr_is_cap_i   (1'b1),
     .mstr_wdata_i    (dbg_wdata),
     .mstr_we_i       (dbg_we_i), 
     .mstr_rdata_o    (dbg_rdata),
@@ -849,7 +844,7 @@ module msftDvIp_obimux3w0 #(
     .slv_req_o       (dbgm_req),
     .slv_addr_o      (dbgm_addr),
     .slv_be_o        (dbgm_be),
-    .slv_is_cap_o    (),
+    .slv_is_cap_o    (dbgm_is_cap),
     .slv_wdata_o     (dbgm_wdata),
     .slv_we_o        (dbgm_we), 
     .slv_gnt_i       (dbgm_gnt),
@@ -876,11 +871,11 @@ module msftDvIp_obimux3w0 #(
     .mstr_err_o      (dbgmem_err),
     .mem_en_o        (DBGMEM_EN_o),
     .mem_addr_o      (DBGMEM_ADDR_o),
-    .mem_wdata_o     (DBGMEM_WDATA),
+    .mem_wdata_o     (DBGMEM_WDATA_o),
     .mem_we_o        (DBGMEM_WE_o),
     .mem_be_o        (DBGMEM_BE_o),
     .mem_is_cap_o    (),
-    .mem_rdata_i     (DBGMEM_RDATA),
+    .mem_rdata_i     (DBGMEM_RDATA_i),
     .mem_ready_i     (DBGMEM_READY_i),
     .mem_error_i     (DBGMEM_ERROR_i)
   );                 

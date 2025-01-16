@@ -234,19 +234,19 @@ wire                                     core_sleep;
 wire                                     dbg_gnt;
 wire                                     dbg_req;
 wire [31:0]                              dbg_addr;
-wire [33-1:0]                            dbg_wdata;
+wire [DATA_WIDTH-1:0]                    dbg_wdata;
 wire                                     dbg_we;
 wire [3:0]                               dbg_be;
-wire [33-1:0]                            dbg_rdata;
+wire [DATA_WIDTH-1:0]                    dbg_rdata;
 wire                                     dbg_rvalid;
 wire                                     dbg_error;
 wire                                     hartrst;
 wire                                     DBGMEM_EN;
 wire [31:0]                              DBGMEM_ADDR;
-wire [33-1:0]                            DBGMEM_WDATA;
+wire [DATA_WIDTH-1:0]                    DBGMEM_WDATA;
 wire                                     DBGMEM_WE;
 wire [3:0]                               DBGMEM_BE;
-wire [33-1:0]                            DBGMEM_RDATA;
+wire [DATA_WIDTH-1:0]                    DBGMEM_RDATA;
 wire                                     DBGMEM_READY;
 wire                                     DBGMEM_ERROR;
 
@@ -334,7 +334,7 @@ msftDvIp_cheri_core_wrapper #(
 // Instance msftDvIp_riscv_cheri_debug
 // ==================================================
 msftDvIp_riscv_cheri_debug #(
-  .DATA_WIDTH(33)  //QQQ
+  .DATA_WIDTH(DATA_WIDTH)  //QQQ
   ) msftDvIp_riscv_cheri_debug_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),

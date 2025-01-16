@@ -17,7 +17,7 @@ module msftDvIp_riscv_cheri_mem #(
 
   output                        ROM_EN_o,
   output  [11:0]                ROM_ADDR_o,
-  input   [DATA_WIDTH-1:0]      ROM_RDATA_i,
+  input   [31:0]                ROM_RDATA_i,
   input                         ROM_READY_i,
   input                         ROM_ERROR_i,
 
