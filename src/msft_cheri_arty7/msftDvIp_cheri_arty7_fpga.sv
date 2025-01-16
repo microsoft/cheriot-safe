@@ -331,9 +331,9 @@ assign TDI_d     = TDO_dvp;
 msftDvIp_cheri0_subsystem #(
   .IROM_INIT_FILE("firmware/cpu0_irom.vhx"),
   .IRAM_INIT_FILE("firmware/cpu0_iram.vhx"),
-  .IROM_DEPTH('h4000),
-  .IRAM_DEPTH('h10000),
-  .DRAM_DEPTH('h4000)
+  .IROM_DEPTH32('h4000),
+  .IRAM_DEPTH32('h10000),
+  .DRAM_DEPTH32('h4000)
   ) msftDvIp_cheri0_subsystem_i (
   .clk_i                         ( sysclk                                   ),
   .rstn_i                        ( rstn                                     ),

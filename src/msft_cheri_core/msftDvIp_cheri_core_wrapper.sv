@@ -5,7 +5,8 @@ module msftDvIp_cheri_core_wrapper import cheri_pkg::*; #(
     parameter DmExceptionAddr = 32'h1A110808,
     parameter HeapBase        = 32'h2004_0000,
     parameter TSMapBase       = 32'h200f_e000, // 4kB default
-    parameter TSMapTop        = 32'h2010_0000
+    parameter TSMapTop        = 32'h2010_0000,
+    parameter DataWidth       = 33
 
   )  (
 
@@ -25,7 +26,7 @@ module msftDvIp_cheri_core_wrapper import cheri_pkg::*; #(
   input  logic                         instr_gnt_i,
   input  logic                         instr_rvalid_i,
   output logic [31:0]                  instr_addr_o,
-  input  logic [32:0]                  instr_rdata_i,
+  input  logic [31:0]                  instr_rdata_i,
   input  logic [6:0]                   instr_rdata_intg_i,
   input  logic                         instr_err_i,
 
@@ -34,11 +35,12 @@ module msftDvIp_cheri_core_wrapper import cheri_pkg::*; #(
   input  logic                         data_gnt_i,
   input  logic                         data_rvalid_i,
   output logic                         data_we_o,
+  output logic                         data_is_cap_o,
   output logic [3:0]                   data_be_o,
   output logic [31:0]                  data_addr_o,
-  output logic [32:0]                  data_wdata_o,
+  output logic [DataWidth-1:0]         data_wdata_o,
   output logic [6:0]                   data_wdata_intg_o,
-  input  logic [32:0]                  data_rdata_i,
+  input  logic [DataWidth-1:0]         data_rdata_i,
   input  logic [6:0]                   data_rdata_intg_i,
   input  logic                         data_err_i,
 
@@ -100,7 +102,8 @@ ibex_top_tracing #(
     .TSMapBase        ( TSMapBase       ),
     .TSMapSize        (2048),
     .MMRegDinW        (128),
-    .MMRegDoutW       (64)
+    .MMRegDoutW       (64),
+    .DataWidth        (DataWidth)
 
 ) ibex_top_i (
 
@@ -129,7 +132,7 @@ ibex_top_tracing #(
 
   // Data memory interface
   .data_req_o(data_req_o),
-  .data_is_cap_o(),
+  .data_is_cap_o(data_is_cap_o),
   .data_gnt_i(data_gnt_i),
   .data_rvalid_i(data_rvalid_i),
   .data_we_o(data_we_o),

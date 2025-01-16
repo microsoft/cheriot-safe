@@ -16,6 +16,7 @@ module msftDvIp_cheri_core0 #(
   input                                      rstn_i,
   output                                     IROM_EN_o,
   output [31:0]                              IROM_ADDR_o,
+  output                                     IROM_IS_CAP_o,
   input  [DATA_WIDTH-1:0]                    IROM_RDATA_i,
   input                                      IROM_READY_i,
   input                                      IROM_ERROR_i,
@@ -24,6 +25,7 @@ module msftDvIp_cheri_core0 #(
   output [DATA_WIDTH-1:0]                    IRAM_WDATA_o,
   output                                     IRAM_WE_o,
   output [3:0]                               IRAM_BE_o,
+  output                                     IRAM_IS_CAP_o,
   input  [DATA_WIDTH-1:0]                    IRAM_RDATA_i,
   input                                      IRAM_READY_i,
   input                                      IRAM_ERROR_i,
@@ -32,15 +34,16 @@ module msftDvIp_cheri_core0 #(
   output [DATA_WIDTH-1:0]                    DRAM_WDATA_o,
   output                                     DRAM_WE_o,
   output [3:0]                               DRAM_BE_o,
+  output                                     DRAM_IS_CAP_o,
   input  [DATA_WIDTH-1:0]                    DRAM_RDATA_i,
   input                                      DRAM_READY_i,
   input                                      DRAM_ERROR_i,
   output                                     TCDEV_EN_o,
   output [31:0]                              TCDEV_ADDR_o,
-  output [DATA_WIDTH-1:0]                    TCDEV_WDATA_o,
+  output [31:0]                              TCDEV_WDATA_o,
   output                                     TCDEV_WE_o,
   output [3:0]                               TCDEV_BE_o,
-  input  [DATA_WIDTH-1:0]                    TCDEV_RDATA_i,
+  input  [31:0]                              TCDEV_RDATA_i,
   input                                      TCDEV_READY_i,
   input  [127:0]                             mmreg_corein_i,
   output [63:0]                              mmreg_coreout_o,
@@ -49,7 +52,7 @@ module msftDvIp_cheri_core0 #(
   input                                      irq_external_i,
   output                                     tsmap_cs_o,
   output [15:0]                              tsmap_addr_o,
-  input  [DATA_WIDTH-1:0]                    tsmap_rdata_i,
+  input  [31:0]                              tsmap_rdata_i,
   output [4-1:0]                             arid_cpu_m_o,
   output [32-1:0]                            araddr_cpu_m_o,
   output [8-1:0]                             arlen_cpu_m_o,
@@ -108,6 +111,7 @@ wire                                     clk;
 wire                                     rstn;
 wire                                     IROM_EN;
 wire [31:0]                              IROM_ADDR;
+wire                                     IROM_IS_CAP;
 wire [DATA_WIDTH-1:0]                    IROM_RDATA;
 wire                                     IROM_READY;
 wire                                     IROM_ERROR;
@@ -116,11 +120,13 @@ wire [31:0]                              IRAM_ADDR;
 wire [DATA_WIDTH-1:0]                    IRAM_WDATA;
 wire                                     IRAM_WE;
 wire [3:0]                               IRAM_BE;
+wire                                     IRAM_IS_CAP;
 wire [DATA_WIDTH-1:0]                    IRAM_RDATA;
 wire                                     IRAM_READY;
 wire                                     IRAM_ERROR;
 wire                                     DRAM_EN;
 wire [31:0]                              DRAM_ADDR;
+wire                                     DRAM_IS_CAP;
 wire [DATA_WIDTH-1:0]                    DRAM_WDATA;
 wire                                     DRAM_WE;
 wire [3:0]                               DRAM_BE;
@@ -129,10 +135,10 @@ wire                                     DRAM_READY;
 wire                                     DRAM_ERROR;
 wire                                     TCDEV_EN;
 wire [31:0]                              TCDEV_ADDR;
-wire [DATA_WIDTH-1:0]                    TCDEV_WDATA;
+wire [31:0]                              TCDEV_WDATA;
 wire                                     TCDEV_WE;
 wire [3:0]                               TCDEV_BE;
-wire [DATA_WIDTH-1:0]                    TCDEV_RDATA;
+wire [31:0]                              TCDEV_RDATA;
 wire                                     TCDEV_READY;
 wire [127:0]                             mmreg_corein;
 wire [63:0]                              mmreg_coreout;
@@ -141,7 +147,7 @@ wire                                     irq_timer;
 wire                                     irq_external;
 wire                                     tsmap_cs;
 wire [15:0]                              tsmap_addr;
-wire [DATA_WIDTH-1:0]                    tsmap_rdata;
+wire [31:0]                              tsmap_rdata;
 wire [4-1:0]                             arid_cpu_m;
 wire [32-1:0]                            araddr_cpu_m;
 wire [8-1:0]                             arlen_cpu_m;
@@ -203,16 +209,17 @@ wire                                     instr_req;
 wire                                     instr_gnt;
 wire                                     instr_rvalid;
 wire [31:0]                              instr_addr;
-wire [32:0]                              instr_rdata;
+wire [31:0]                              instr_rdata;
 wire                                     data_req;
 wire                                     data_gnt;
 wire                                     data_rvalid;
 wire                                     data_we;
 wire [3:0]                               data_be;
+wire                                     data_is_cap;
 wire [31:0]                              data_addr;
-wire [32:0]                              data_wdata;
+wire [DATA_WIDTH-1:0]                    data_wdata;
 wire [6:0]                               data_wdata_intg;
-wire [32:0]                              data_rdata;
+wire [DATA_WIDTH-1:0]                    data_rdata;
 wire                                     scramble_req;
 wire                                     debug_req;
 wire                                     double_fault_seen;
@@ -248,7 +255,7 @@ wire                                     DBGMEM_ERROR;
 // ==================================================
 wire                                     data_error;
 wire                                     instr_error;
-wire [32:0]                              IROM_WDATA;
+wire [DATA_WIDTH-1:0]                    IROM_WDATA;
 wire                                     IROM_WE;
 wire [3:0]                               IROM_BE;
 
@@ -265,7 +272,8 @@ wire [3:0]                               IROM_BE;
 // ==================================================
 msftDvIp_cheri_core_wrapper #(
   .DmHaltAddr(32'h0000_0800),
-  .DmExceptionAddr(32'h0000_0800)
+  .DmExceptionAddr(32'h0000_0800),
+  .DataWidth(DATA_WIDTH)
   ) msftDvIp_cheri_core_wrapper_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),
@@ -286,6 +294,7 @@ msftDvIp_cheri_core_wrapper #(
   .data_rvalid_i                 ( data_rvalid                              ),
   .data_we_o                     ( data_we                                  ),
   .data_be_o                     ( data_be                                  ),
+  .data_is_cap_o                 ( data_is_cap                              ),
   .data_addr_o                   ( data_addr                                ),
   .data_wdata_o                  ( data_wdata                               ),
   .data_wdata_intg_o             ( data_wdata_intg                          ),
@@ -365,7 +374,7 @@ msftDvIp_riscv_cheri_debug #(
 // Instance msftDvIp_obimux3w0
 // ==================================================
 msftDvIp_obimux3w0 #(
-  .DATA_WIDTH(DATA_WIDTH)
+  .DataWidth(DATA_WIDTH)
   ) msftDvIp_obimux3w0_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),
@@ -373,6 +382,7 @@ msftDvIp_obimux3w0 #(
   .data_gnt_o                    ( data_gnt                                 ),
   .data_addr_i                   ( data_addr                                ),
   .data_be_i                     ( data_be                                  ),
+  .data_is_cap_i                 ( data_is_cap                              ),
   .data_wdata_i                  ( data_wdata                               ),
   .data_we_i                     ( data_we                                  ),
   .data_rdata_o                  ( data_rdata                               ),
@@ -411,6 +421,7 @@ msftDvIp_obimux3w0 #(
   .TCDEV_ERROR_i                 ( 1'b0                                     ),
   .IROM_EN_o                     ( IROM_EN                                  ),
   .IROM_ADDR_o                   ( IROM_ADDR                                ),
+  .IROM_IS_CAP_o                 ( IROM_IS_CAP                              ),
   .IROM_WDATA_o                  ( IROM_WDATA                               ),
   .IROM_WE_o                     ( IROM_WE                                  ),
   .IROM_BE_o                     ( IROM_BE                                  ),
@@ -419,6 +430,7 @@ msftDvIp_obimux3w0 #(
   .IROM_ERROR_i                  ( IROM_ERROR                               ),
   .IRAM_EN_o                     ( IRAM_EN                                  ),
   .IRAM_ADDR_o                   ( IRAM_ADDR                                ),
+  .IRAM_IS_CAP_o                 ( IRAM_IS_CAP                              ),
   .IRAM_WDATA_o                  ( IRAM_WDATA                               ),
   .IRAM_WE_o                     ( IRAM_WE                                  ),
   .IRAM_BE_o                     ( IRAM_BE                                  ),
@@ -427,6 +439,7 @@ msftDvIp_obimux3w0 #(
   .IRAM_ERROR_i                  ( IRAM_ERROR                               ),
   .DRAM_EN_o                     ( DRAM_EN                                  ),
   .DRAM_ADDR_o                   ( DRAM_ADDR                                ),
+  .DRAM_IS_CAP_o                 ( DRAM_IS_CAP                              ),
   .DRAM_WDATA_o                  ( DRAM_WDATA                               ),
   .DRAM_WE_o                     ( DRAM_WE                                  ),
   .DRAM_BE_o                     ( DRAM_BE                                  ),
@@ -480,6 +493,7 @@ assign clk = clk_i;
 assign rstn = rstn_i;
 assign IROM_EN_o = IROM_EN;
 assign IROM_ADDR_o = IROM_ADDR;
+assign IROM_IS_CAP_o = IROM_IS_CAP;
 assign IROM_RDATA = IROM_RDATA_i;
 assign IROM_READY = IROM_READY_i;
 assign IROM_ERROR = IROM_ERROR_i;
@@ -488,11 +502,13 @@ assign IRAM_ADDR_o = IRAM_ADDR;
 assign IRAM_WDATA_o = IRAM_WDATA;
 assign IRAM_WE_o = IRAM_WE;
 assign IRAM_BE_o = IRAM_BE;
+assign IRAM_IS_CAP_o = IRAM_IS_CAP;
 assign IRAM_RDATA = IRAM_RDATA_i;
 assign IRAM_READY = IRAM_READY_i;
 assign IRAM_ERROR = IRAM_ERROR_i;
 assign DRAM_EN_o = DRAM_EN;
 assign DRAM_ADDR_o = DRAM_ADDR;
+assign DRAM_IS_CAP_o = DRAM_IS_CAP;
 assign DRAM_WDATA_o = DRAM_WDATA;
 assign DRAM_WE_o = DRAM_WE;
 assign DRAM_BE_o = DRAM_BE;
