@@ -40,7 +40,7 @@ module mstr_mux # (
   input  logic                  mstr_is_cap_i,
   input  logic [DataWidth-1:0]  mstr_wdata_i, 
   input  logic                  mstr_we_i, 
-  output logic [32:0]           mstr_rdata_o, 
+  output logic [DataWidth-1:0]  mstr_rdata_o, 
   output logic                  mstr_rvalid_o,
   output logic                  mstr_err_o,
                                
@@ -120,7 +120,7 @@ module mstr_mux # (
     else
       slv_req_dec = 'h0;
 
-    mstr_rdata_o = 33'h0;
+    mstr_rdata_o = {DataWidth{1'b0}};
     for (i = 0; i < nSLV; i++) begin
       if (pending_slv_resp[i]) mstr_rdata_o = slv_rdata_i[i];
     end 
@@ -413,7 +413,7 @@ module slv_axi_mux # (
   logic             axi_wr_done, w_done, aw_done;
   logic             axi_acc_done, axi_resp_done;
   logic [31:0]      axi_addr;
-  logic [32:0]      axi_wdata;
+  logic [31:0]      axi_wdata;
   logic             axi_we, axi_we_q;
   logic [3:0]       axi_be;
 
@@ -478,7 +478,7 @@ module slv_axi_mux # (
 
     for (i = 0; i < nMSTR; i++) begin
       axi_addr  = axi_addr  | (mstr_addr_i[i] & {32{mstr_gnt_q[i]}});
-      axi_wdata = axi_wdata | (mstr_wdata_i[i] & {33{mstr_gnt_q[i]}});
+      axi_wdata = axi_wdata | (mstr_wdata_i[i] & {32{mstr_gnt_q[i]}});
       axi_we    = axi_we    | (mstr_we_i[i] & mstr_gnt_q[i]);
       axi_be    = axi_be    | (mstr_be_i[i] & {4{mstr_gnt_q[i]}});
     end 
@@ -732,6 +732,7 @@ module msftDvIp_obimux3w0 #(
 
   logic [DataWidth-1:0]   instr_rdata;
   logic [DataWidth-1:0]   dbg_rdata, dbg_wdata;
+  logic [DataWidth-1:0]   DBGMEM_WDATA, DBGMEM_RDATA;
   logic [nMSTR-1:0][31:0] m2s_wdata32; 
 
   assign cpud_gnt = {axi_gnt[0], dram_gnt[0] , iram_gnt[0], irom_gnt[0], tcdev_gnt[0], dbgmem_gnt[0]};
@@ -751,7 +752,7 @@ module msftDvIp_obimux3w0 #(
 
   assign m2s_addr   = {dbgm_addr, cpui_addr, cpud_addr};      // shared
   assign m2s_be     = {dbgm_be, cpui_be, cpud_be};            // shared
-  assign m2s_is_cap = {1'b0, 1'b0, cpud_be};            // shared
+  assign m2s_is_cap = {1'b0, 1'b0, cpud_is_cap};              // shared
   assign m2s_we     = {dbgm_we, cpui_we, cpud_we};            // shared
   assign m2s_wdata  = {dbgm_wdata, cpui_wdata, cpud_wdata};   // shared
 
@@ -764,10 +765,14 @@ module msftDvIp_obimux3w0 #(
     assign dbg_wdata   = {33'h0, dbg_wdata_i};              // QQQ
     assign axi_rdata   = {33'h0, axi_rdata32};
     assign tcdev_rdata = {33'h0,tcdev_rdata32};
+    assign DBGMEM_WDATA_o = DBGMEM_WDATA[32:0];
+    assign DBGMEM_RDATA = {32'h0, DBGMEM_RDATA_i};
   end else begin
     assign dbg_wdata   = dbg_wdata_i;
     assign axi_rdata   = {1'h0, axi_rdata32};
     assign tcdev_rdata = {1'h0,tcdev_rdata32};
+    assign DBGMEM_WDATA_o = DBGMEM_WDATA;
+    assign DBGMEM_RDATA = DBGMEM_RDATA_i;
   end
 
   for (genvar i = 0; i < nMSTR; i++) begin : gen_m2s_wdata32
@@ -838,7 +843,7 @@ module msftDvIp_obimux3w0 #(
     .mstr_is_cap_i   (1'b0),
     .mstr_wdata_i    (dbg_wdata),
     .mstr_we_i       (dbg_we_i), 
-    .mstr_rdata_o    (dbg_rdata_o),
+    .mstr_rdata_o    (dbg_rdata),
     .mstr_rvalid_o   (dbg_rvalid_o),
     .mstr_err_o      (dbg_error_o),
     .slv_req_o       (dbgm_req),
@@ -871,11 +876,11 @@ module msftDvIp_obimux3w0 #(
     .mstr_err_o      (dbgmem_err),
     .mem_en_o        (DBGMEM_EN_o),
     .mem_addr_o      (DBGMEM_ADDR_o),
-    .mem_wdata_o     (DBGMEM_WDATA_o),
+    .mem_wdata_o     (DBGMEM_WDATA),
     .mem_we_o        (DBGMEM_WE_o),
     .mem_be_o        (DBGMEM_BE_o),
     .mem_is_cap_o    (),
-    .mem_rdata_i     (DBGMEM_RDATA_i),
+    .mem_rdata_i     (DBGMEM_RDATA),
     .mem_ready_i     (DBGMEM_READY_i),
     .mem_error_i     (DBGMEM_ERROR_i)
   );                 

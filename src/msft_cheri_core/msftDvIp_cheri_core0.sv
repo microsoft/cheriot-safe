@@ -334,7 +334,7 @@ msftDvIp_cheri_core_wrapper #(
 // Instance msftDvIp_riscv_cheri_debug
 // ==================================================
 msftDvIp_riscv_cheri_debug #(
-  .DATA_WIDTH(DATA_WIDTH)
+  .DATA_WIDTH(33)  //QQQ
   ) msftDvIp_riscv_cheri_debug_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),

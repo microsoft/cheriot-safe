@@ -233,8 +233,8 @@ wire [31:0] CSR_MTVEC = `CHERI_CORE_PATH.csr_mtvec[31:0];
 
 wire [31:0] CSR_MCAUSE = {26'h0, `CHERI_CORE_PATH.cs_registers_i.csr_mcause_i[5:0]};
 
-wire CC_lsu_req        = `CHERI_CORE_PATH.load_store_unit_i.lsu_req_i;
-wire CC_lsu_cheri_error = `CHERI_CORE_PATH.load_store_unit_i.lsu_cheri_err_i;
+wire CC_lsu_req        = `CHERI_CORE_PATH.load_store_unit_i.cpu_lsu_req_i;
+wire CC_lsu_cheri_error = `CHERI_CORE_PATH.load_store_unit_i.cpu_lsu_cheri_err_i;
 wire CC_perm_vio       = `CHERI_CORE_PATH.g_cheri_ex.u_cheri_ex.perm_vio;
 
 wire CC_addr_bound_vio    = `CHERI_CORE_PATH.g_cheri_ex.u_cheri_ex.addr_bound_vio;

@@ -1194,7 +1194,7 @@ assign irqs_ext = 0;
 // ==================================================
 // Instance msftDvIp_cheri_core0
 // ==================================================
-msftDvIp_cheri_core0 msftDvIp_cheri_core0_i (
+msftDvIp_cheri_core0 #(.DATA_WIDTH(MEM_DATA_WIDTH)) msftDvIp_cheri_core0_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn_ss                                  ),
   .IROM_EN_o                     ( IROM_EN                                  ),

@@ -164,7 +164,6 @@ assign IROM_ERROR_o = 1'b0;
 assign IRAM_EN = IRAM_EN_i;
 assign IRAM_WE = IRAM_WE_i;
 assign IRAM_BE = IRAM_BE_i;
-assign IRAM_RDATA_o = IRAM_RDATA;
 assign IRAM_READY_o = 1'b1;
 assign IRAM_ERROR_o = 1'b0;
 
@@ -172,7 +171,6 @@ assign DRAM_EN = DRAM_EN_i;
 assign DRAM_WDATA = DRAM_WDATA_i;
 assign DRAM_WE = DRAM_WE_i;
 assign DRAM_BE = DRAM_BE_i;
-assign DRAM_RDATA_o = DRAM_RDATA;
 assign DRAM_READY_o = 1'b1;
 assign DRAM_ERROR_o = 1'b0;
 
@@ -183,7 +181,7 @@ if (DATA_WIDTH == 65) begin
   assign IROM_ADDR_mem = IROM_ADDR_i[IROM_AW32+1:3];
   assign IRAM_ADDR_mem = IRAM_ADDR_i[IRAM_AW32+1:3];
   assign DRAM_ADDR_mem = DRAM_ADDR_i[DRAM_AW32+1:3];
-  assign tsamap_addr_mem = tsmap_addr_i[15:1];
+  assign tsmap_addr_mem = tsmap_addr_i[15:1];
 
   assign IROM_RDATA_o = irom_rd32hi_q ?  {33'h0, IROM_RDATA[63:32]} : IROM_RDATA;
   assign IRAM_RDATA_o = iram_rd32hi_q ?  {33'h0, IRAM_RDATA[63:32]} : IRAM_RDATA;
