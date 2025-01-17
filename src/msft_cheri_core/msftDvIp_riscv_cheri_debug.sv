@@ -82,9 +82,9 @@ wire                                     DBGMEM_ERROR;
 wire                                     psel_dmi;
 wire                                     penable_dmi;
 wire [7-1:0]                             paddr_dmi;
-wire [33-1:0]                            pwdata_dmi;
+wire [DATA_WIDTH-1:0]                    pwdata_dmi;
 wire                                     pwrite_dmi;
-wire [33-1:0]                            prdata_dmi;
+wire [DATA_WIDTH-1:0]                    prdata_dmi;
 wire                                     pready_dmi;
 wire                                     pslverr_dmi;
 
@@ -93,7 +93,7 @@ wire                                     pslverr_dmi;
 // ==================================================
 wire                                     ROM_EN;
 wire [11:0]                              ROM_ADDR;
-wire [33-1:0]                            ROM_RDATA;
+wire [31:0]                              ROM_RDATA;
 wire                                     ROM_READY;
 wire                                     ROM_ERROR;
 wire                                     dmactive;
@@ -108,9 +108,9 @@ wire                                     debug_transfer_reg;
 wire                                     debug_transfer_ack;
 wire                                     ac_en;
 wire [3:0]                               ac_addr;
-wire [33-1:0]                            ac_wdata;
+wire [DATA_WIDTH-1:0]                    ac_wdata;
 wire                                     ac_write;
-wire [33-1:0]                            ac_rdata;
+wire [DATA_WIDTH-1:0]                    ac_rdata;
 wire                                     prog_buf_en;
 wire [7:0]                               prog_buf_addr;
 wire [31:0]                              prog_buf_rdata;
@@ -139,7 +139,8 @@ wire                                     cap_rd_valid;
 // Instance msftDvIp_riscv_cheri_dmibus
 // ==================================================
 msftDvIp_riscv_cheri_dmibus #(
-  .IDCODE(32'h000004ab)
+  .IDCODE(32'h000004ab),
+  .DMI_DATA_BITS(DATA_WIDTH)
   ) msftDvIp_riscv_cheri_dmibus_i (
   .TCK_i                         ( TCK                                      ),
   .TMS_i                         ( TMS                                      ),
@@ -218,7 +219,7 @@ msftDvIp_riscv_cheri_mem #(
 // Instance msftDvIp_riscv_cheri_debug_rom
 // ==================================================
 msftDvIp_riscv_cheri_debug_rom #(
-  .DATA_WIDTH(DATA_WIDTH)
+  .DATA_WIDTH(32)
   ) msftDvIp_riscv_cheri_debug_rom_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),

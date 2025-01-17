@@ -44,3 +44,8 @@ Currently cheriot-safe supports the Diligent Arty A7-100T board.
 ## Design documentation
 See the [wiki section](https://github.com/microsoft/cheriot-safe/wiki) for more information about the cheri_safe FPGA design
 
+## 65-bit datapath support
+For now the 65-bit memory support lives on the "65bit" branch. The only change needed there is to convert the firmware vhx files to 64-bit format (There is a python script at sim/vcs/vhx32to64.py to help with file conversion). 
+
+The FPGA now by default looks for "cpu0_irom64.vhx" and "cpu0_iram64.vhx" for initial memory content. No changes to the FPGA building and the vcs/verilator simulation flow. The UART loader should also work as before. 
+
