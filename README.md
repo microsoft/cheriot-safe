@@ -31,9 +31,7 @@ git submodule update --init --recursive
 See the readme and examples under [sim/verilator](https://github.com/microsoft/cheriot-safe/tree/main/sim/verilator).
 
 ## Running a VCS simulation
-1. Review the ./sim/Makefile for the correct path to the vcs simulator.
-2. Execute: ./trun hello_world
-3. Test output is in ./out/run/hello_world/...
+See the readme and examples under [sim/verilator](https://github.com/microsoft/cheriot-safe/tree/main/sim/vcs).
 
 ## Building FPGA bitfile
 See the readme under [build/](https://github.com/microsoft/cheriot-safe/tree/main/build)
