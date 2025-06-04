@@ -10,7 +10,8 @@
 // Module msftDvIp_cheri_core0 Definition
 // ==================================================
 module msftDvIp_cheri_core0 #(
-    parameter DATA_WIDTH = 33
+    parameter int unsigned DATA_WIDTH = 33,
+    parameter bit          UseIbex    = 1'b1
   ) (
   input                                      clk_i,
   input                                      rstn_i,
@@ -209,7 +210,7 @@ wire                                     instr_req;
 wire                                     instr_gnt;
 wire                                     instr_rvalid;
 wire [31:0]                              instr_addr;
-wire [31:0]                              instr_rdata;
+wire [63:0]                              instr_rdata;
 wire                                     data_req;
 wire                                     data_gnt;
 wire                                     data_rvalid;
@@ -273,7 +274,8 @@ wire [3:0]                               IROM_BE;
 msftDvIp_cheri_core_wrapper #(
   .DmHaltAddr(32'h0000_0800),
   .DmExceptionAddr(32'h0000_0800),
-  .DataWidth(DATA_WIDTH)
+  .DataWidth(DATA_WIDTH),
+  .UseIbex(UseIbex)
   ) msftDvIp_cheri_core_wrapper_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),
@@ -286,7 +288,7 @@ msftDvIp_cheri_core_wrapper #(
   .instr_gnt_i                   ( instr_gnt                                ),
   .instr_rvalid_i                ( instr_rvalid                             ),
   .instr_addr_o                  ( instr_addr                               ),
-  .instr_rdata_i                 ( instr_rdata                              ),
+  .instr_rdata_i                 ( instr_rdata[63:0]                        ),
   .instr_rdata_intg_i            ( 7'h0                                     ),
   .instr_err_i                   ( 1'b0                                     ),
   .data_req_o                    ( data_req                                 ),

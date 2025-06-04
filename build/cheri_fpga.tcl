@@ -6,9 +6,8 @@ set DesignRoot [lindex $argv 0 ]
 set netlistDir [lindex $argv 1 ]
 set files      [lindex $argv 2 ]
 set xdcfiles   [lindex $argv 3 ]
-
-
 set SysclkFreq [lindex $argv 4 ]
+set UseSuper   [lindex $argv 5 ]
 
 switch $SysclkFreq {
   20 { 
@@ -22,6 +21,9 @@ switch $SysclkFreq {
    }
   33 { 
    set SysclkDiv1GHz 30 
+   }
+  50 { 
+   set SysclkDiv1GHz 20 
    }
   default { 
    set SysclkDiv1GHz 50
@@ -103,16 +105,38 @@ exec ln -sf $netlistDir current_netlist
 #==================================================
 # Synthesize Design
 #==================================================
-synth_design\
-  -top $TOPLEVEL\
-  -keep_equivalent_registers\
-  -part $PART\
-  -gated_clock_conversion on\
-  -verilog_define PLAT__FPGA\
-  -verilog_define LOAD_FPGA_MEMORIES\
-  -verilog_define SYNTHESIS\
-  -include_dirs $STITCH_INCLUDE_LIST\
-  -generic SysclkDiv1GHz=$SysclkDiv1GHz
+if {$UseSuper == 1} {
+  synth_design\
+    -top $TOPLEVEL\
+    -keep_equivalent_registers\
+    -part $PART\
+    -gated_clock_conversion on\
+    -verilog_define PLAT__FPGA\
+    -verilog_define LOAD_FPGA_MEMORIES\
+    -verilog_define SYNTHESIS\
+    -verilog_define CHERIoT\
+    -verilog_define UseSuper\
+    -include_dirs $STITCH_INCLUDE_LIST\
+    -generic SysclkDiv1GHz=$SysclkDiv1GHz\
+    -generic MemDataWidth=65\
+    -generic UseIbex=0\
+    -generic IROM_INIT_FILE="firmware/cpu0_irom64.vhx"\
+    -generic IRAM_INIT_FILE="firmware/cpu0_iram64.vhx"
+} else {
+  synth_design\
+    -top $TOPLEVEL\
+    -keep_equivalent_registers\
+    -part $PART\
+    -gated_clock_conversion on\
+    -verilog_define PLAT__FPGA\
+    -verilog_define LOAD_FPGA_MEMORIES\
+    -verilog_define SYNTHESIS\
+    -include_dirs $STITCH_INCLUDE_LIST\
+    -generic SysclkDiv1GHz=$SysclkDiv1GHz\
+    -generic MemDataWidth=65\
+    -generic IROM_INIT_FILE="firmware/cpu0_irom.vhx"\
+    -generic IRAM_INIT_FILE="firmware/cpu0_iram.vhx"
+}
 
 write_checkpoint -force ./$netlistDir/${TOPLEVEL}_synthesized.dcp
 report_utilization -file ./$netlistDir/post-syn_reports/${TOPLEVEL}_utilization_synth.rpt

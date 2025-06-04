@@ -4,8 +4,8 @@
 `timescale 1ns/1ps
 
 module fpga_tb ();
-  import ibex_pkg::*;
-  import prim_ram_1p_pkg::*;
+  // import ibex_pkg::*;
+  // import prim_ram_1p_pkg::*;
 
   logic       board_clk, sysclk;
   logic       rst_n;
@@ -22,7 +22,18 @@ module fpga_tb ();
 
 
   msftDvIp_cheri_arty7_fpga #(
-    .SysclkDiv1GHz(33)
+    .SysclkDiv1GHz(33),
+`ifdef UseSuper
+    .MemDataWidth(65),
+    .UseIbex(1'b0),
+    .IROM_INIT_FILE("firmware/cpu0_irom64.vhx"),
+    .IRAM_INIT_FILE("firmware/cpu0_iram64.vhx")
+`else
+    .MemDataWidth(65),
+    .UseIbex(1'b1),
+    .IROM_INIT_FILE("firmware/cpu0_irom.vhx"),
+    .IRAM_INIT_FILE("firmware/cpu0_iram.vhx")
+`endif
   ) dut (
     .board_clk_i    (board_clk),
     .board_rstn_i   (rst_n),

@@ -25,7 +25,8 @@ module msftDvIp_cheri0_subsystem #(
     parameter DRAM_DEPTH32 = 'h4000,
     parameter DEF_ALT_FUNC0 = 32'h0000_0000,
     parameter DEF_ALT_FUNC1 = 32'h0000_0000,
-    parameter MEM_DATA_WIDTH = 33
+    parameter MEM_DATA_WIDTH = 33,
+    parameter bit UseIbex = 1'b1
   ) (
   input                                      clk_i,
   input                                      rstn_i,
@@ -594,29 +595,6 @@ defparam `SS_IROM_PATH.RAM_BACK_DOOR_ENABLE=1;
   assign `SS_IRAM_PATH.wstrb_bkdr = bd1_iram_wstrb;
   assign bd1_iram_dout = `SS_IRAM_PATH.dout;
   assign bd1_iram_ready = `SS_IRAM_PATH.rdy_bkdr;
-`define SS_CORE_PATH msftDvIp_cheri_core0_i.msftDvIp_cheri_core_wrapper_i.ibex_top_i.u_ibex_top.u_ibex_core
- assign pc_dvp = `SS_CORE_PATH.if_stage_i.pc_id_o;
- assign cpu_rst = ~`SS_CORE_PATH.rst_ni;
- assign inst_valid         = `SS_CORE_PATH.instr_id_done;
- assign branch             = `SS_CORE_PATH.id_stage_i.pc_set_o;
-logic [3:0] ctlsm, lsusm;
-logic [1:0] fifo_cnt;
- assign ctlsm        = `SS_CORE_PATH.id_stage_i.controller_i.ctrl_fsm_cs[3:0];
- assign lsusm        = `SS_CORE_PATH.load_store_unit_i.ls_fsm_cs[3:0];
- assign cpuexp       = `SS_CORE_PATH.id_stage_i.controller_i.id_exception_o;
- assign cpuexc       = `SS_CORE_PATH.id_stage_i.controller_i.id_exception_o;
- assign valid        = `SS_CORE_PATH.id_stage_i.instr_valid_i;
- assign stall_id     = `SS_CORE_PATH.id_stage_i.stall_id;
- assign stall_mem    = `SS_CORE_PATH.id_stage_i.stall_mem;
- assign stall_wb     = `SS_CORE_PATH.id_stage_i.stall_wb;
- assign if_req       = `SS_CORE_PATH.if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.valid_req;
- assign fifo_cnt     = 'h0;
- assign ss_status  = {14'h0, fifo_cnt, lsusm, ctlsm, 2'h0, stall_mem, if_req, stall_id, stall_wb, cpuexc, cpu_rst};
- assign cheri_ex_dbg_status = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_status;
- assign cheri_operator      = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.cheri_operator_i;
- assign cheri_ex_cs1_vec    = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_cs1_vec;
- assign cheri_ex_cs2_vec    = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_cs2_vec;
- assign cheri_ex_cd_vec     = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_cd_vec;
 
 // ==================================================
 // Instance msftDvDebug_backdoor_v0
@@ -1194,7 +1172,7 @@ assign irqs_ext = 0;
 // ==================================================
 // Instance msftDvIp_cheri_core0
 // ==================================================
-msftDvIp_cheri_core0 #(.DATA_WIDTH(MEM_DATA_WIDTH)) msftDvIp_cheri_core0_i (
+msftDvIp_cheri_core0 #(.DATA_WIDTH(MEM_DATA_WIDTH), .UseIbex(UseIbex)) msftDvIp_cheri_core0_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn_ss                                  ),
   .IROM_EN_o                     ( IROM_EN                                  ),

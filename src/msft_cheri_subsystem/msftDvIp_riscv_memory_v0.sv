@@ -168,7 +168,6 @@ assign IRAM_READY_o = 1'b1;
 assign IRAM_ERROR_o = 1'b0;
 
 assign DRAM_EN = DRAM_EN_i;
-assign DRAM_WDATA = DRAM_WDATA_i;
 assign DRAM_WE = DRAM_WE_i;
 assign DRAM_BE = DRAM_BE_i;
 assign DRAM_READY_o = 1'b1;

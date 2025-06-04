@@ -10,7 +10,11 @@
 // Module msftDvIp_cheri_arty7_fpga Definition
 // ==================================================
 module msftDvIp_cheri_arty7_fpga # (
-  parameter int SysclkDiv1GHz = 50
+  parameter int unsigned SysclkDiv1GHz  = 50,
+  parameter int unsigned MemDataWidth   = 65,
+  parameter bit          UseIbex        = 1'b1,
+  parameter              IROM_INIT_FILE = "firmware/cpu0_irom64.vhx",
+  parameter              IRAM_INIT_FILE = "firmware/cpu0_iram64.vhx"
 )(
   input                                      board_clk_i,
   input                                      board_rstn_i,
@@ -334,7 +338,8 @@ msftDvIp_cheri0_subsystem #(
   .IROM_DEPTH32('h4000),
   .IRAM_DEPTH32('h10000),
   .DRAM_DEPTH32('h4000),
-  .MEM_DATA_WIDTH(65)
+  .MEM_DATA_WIDTH(MemDataWidth),
+  .UseIbex(UseIbex)
   ) msftDvIp_cheri0_subsystem_i (
   .clk_i                         ( sysclk                                   ),
   .rstn_i                        ( rstn                                     ),

@@ -549,7 +549,7 @@ module msftDvIp_obimux3w0 #(
   output                instr_gnt_o,
   input [31:0]          instr_addr_i,
 
-  output [31:0]         instr_rdata_o,
+  output [63:0]         instr_rdata_o,
   output                instr_rvalid_o,
   output                instr_error_o,
 
@@ -757,7 +757,7 @@ module msftDvIp_obimux3w0 #(
   assign m2s_wdata  = {dbgm_wdata, cpui_wdata, cpud_wdata};   // shared
 
   // Data Width Adaptation
-  assign instr_rdata_o = instr_rdata[31:0];
+  assign instr_rdata_o = instr_rdata[63:0];
 
   assign dbg_rdata_o   = dbg_rdata;   // QQQ
   assign dbg_wdata     = dbg_wdata_i;
