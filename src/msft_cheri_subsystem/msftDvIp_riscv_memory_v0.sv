@@ -125,7 +125,7 @@ msftDvIp_fpga_block_ram_2port_model #(
     .wstrb({1'b1, {8{DRAM_BE[3]}}, {8{DRAM_BE[2]}}, {8{DRAM_BE[1]}}, {8{DRAM_BE[0]}} }),
     .ready(dram_rdy),
     .cs2(tsmap_cs_i),
-    .addr2(tsmap_addr_i[15:0]),
+    .addr2(tsmap_addr_i[13:0]),
     .dout2(tsmap_rdata_o)
   );
 

@@ -49,7 +49,7 @@ module msftDvIp_cheri_core0 #(
   input                                      irq_external_i,
   output                                     tsmap_cs_o,
   output [15:0]                              tsmap_addr_o,
-  input  [DATA_WIDTH-1:0]                    tsmap_rdata_i,
+  input  [31:0]                              tsmap_rdata_i,
   output [4-1:0]                             arid_cpu_m_o,
   output [32-1:0]                            araddr_cpu_m_o,
   output [8-1:0]                             arlen_cpu_m_o,
@@ -141,7 +141,7 @@ wire                                     irq_timer;
 wire                                     irq_external;
 wire                                     tsmap_cs;
 wire [15:0]                              tsmap_addr;
-wire [DATA_WIDTH-1:0]                    tsmap_rdata;
+wire [31:0]                              tsmap_rdata;
 wire [4-1:0]                             arid_cpu_m;
 wire [32-1:0]                            araddr_cpu_m;
 wire [8-1:0]                             arlen_cpu_m;
@@ -263,6 +263,14 @@ wire [3:0]                               IROM_BE;
 // ==================================================
 // Instance msftDvIp_cheri_core_wrapper
 // ==================================================
+logic cheri_pmode;
+
+`ifdef FORCE_PMODE_RV32
+   assign cheri_pmode = 1'b0;
+`else
+   assign cheri_pmode = 1'b1;
+`endif
+
 msftDvIp_cheri_core_wrapper #(
   .DmHaltAddr(32'h0000_0800),
   .DmExceptionAddr(32'h0000_0800)
@@ -270,7 +278,7 @@ msftDvIp_cheri_core_wrapper #(
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn                                     ),
   .test_en_i                     ( 1'b0                                     ),
-  .cheri_pmode_i                 ( 1'b1                                     ),
+  .cheri_pmode_i                 ( cheri_pmode                              ),
   .cheri_tsafe_en_i              ( 1'b1                                     ),
   .hart_id_i                     ( 32'h0000_0000                            ),
   .boot_addr_i                   ( 32'h2000_0000                            ),
