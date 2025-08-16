@@ -9,6 +9,7 @@
 -Wno-INITIALDLY
 -Wno-CASEX
 -Wno-LATCH
++define+RVFI=1
 +define+XILINX_PLL_MODEL__
 +incdir+$DesignRoot/cheriot-ibex/rtl/
 +incdir+$DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl

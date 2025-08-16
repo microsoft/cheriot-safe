@@ -1,0 +1,3 @@
+export DesignRoot=../..
+#vnc run  -Ir -wl -r  vcs  RAM/64000 x86_64 redhat7 -- vcs -full64 -sverilog +systemverilogext+sv -timescale=1ns/1ps -debug_acc+all +define+DII_SIM -f ibexc.vcs.f
+vcs -full64 -sverilog -xlrm uniq_prior_final +systemverilogext+sv -timescale=1ns/1ps  +define+FORCE_PMODE_RV32=1 -debug_acc+all -f ./all.vcs.f
