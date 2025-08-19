@@ -2,13 +2,14 @@
 #==================================================
 # Get Netlist Dir
 #==================================================
-set DesignRoot [lindex $argv 0 ]
-set netlistDir [lindex $argv 1 ]
-set files      [lindex $argv 2 ]
-set xdcfiles   [lindex $argv 3 ]
+set DesignRoot  [lindex $argv 0 ]
+set netlistDir  [lindex $argv 1 ]
+set files       [lindex $argv 2 ]
+set xdcfiles    [lindex $argv 3 ]
+set SysclkFreq  [lindex $argv 4 ]
+set CfgVlogDef1 [lindex $argv 5 ]
+set CfgVlogDef2 [lindex $argv 6 ]
 
-
-set SysclkFreq [lindex $argv 4 ]
 
 switch $SysclkFreq {
   20 { 
@@ -23,6 +24,9 @@ switch $SysclkFreq {
   33 { 
    set SysclkDiv1GHz 30 
    }
+  50 { 
+   set SysclkDiv1GHz 20 
+   }
   default { 
    set SysclkDiv1GHz 50
    }
@@ -33,6 +37,7 @@ set SysclkPeriod [expr $SysclkDiv1GHz - 0.5]
 set SysclkWaveform [list 0 [expr $SysclkPeriod/2.0]]
 
 puts "--> SysclkPeriod is $SysclkPeriod ns, waveform is {$SysclkWaveform}"
+puts "--> VlogDefs: $CfgVlogDef1 $CfgVlogDef2"
 
 #==================================================
 # FPGA Build
@@ -97,22 +102,25 @@ file mkdir ./$netlistDir/post-syn_reports
 file mkdir ./$netlistDir/post-opt_reports
 file mkdir ./$netlistDir/post-place_reports
 file mkdir ./$netlistDir/post-route_reports
+
 exec rm -f current_netlist
 exec ln -sf $netlistDir current_netlist
 
 #==================================================
 # Synthesize Design
 #==================================================
-synth_design\
-  -top $TOPLEVEL\
-  -keep_equivalent_registers\
-  -part $PART\
-  -gated_clock_conversion on\
-  -verilog_define PLAT__FPGA\
-  -verilog_define LOAD_FPGA_MEMORIES\
-  -verilog_define SYNTHESIS\
-  -include_dirs $STITCH_INCLUDE_LIST\
-  -generic SysclkDiv1GHz=$SysclkDiv1GHz
+  synth_design\
+    -top $TOPLEVEL\
+    -keep_equivalent_registers\
+    -part $PART\
+    -gated_clock_conversion on\
+    -verilog_define PLAT__FPGA\
+    -verilog_define LOAD_FPGA_MEMORIES\
+    -verilog_define SYNTHESIS\
+    -verilog_define CHERIoT\
+    $CfgVlogDef1 $CfgVlogDef2\
+    -include_dirs $STITCH_INCLUDE_LIST\
+    -generic SysclkDiv1GHz=$SysclkDiv1GHz
 
 write_checkpoint -force ./$netlistDir/${TOPLEVEL}_synthesized.dcp
 report_utilization -file ./$netlistDir/post-syn_reports/${TOPLEVEL}_utilization_synth.rpt

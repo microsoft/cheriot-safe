@@ -1,12 +1,57 @@
-#!/usr/bin/sh
-DESIGNROOT="../"
-NETLISTDIR="RUN_$(date +%s)"
-SysclkFreq=20
-mkdir $NETLISTDIR
+#!/usr/bin/bash
+
+VlogDef1=""
+VlogDef2=""
+FileList="./read_design.tcl"
+Freq="20"
+
+# Loop over args
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -conf1)
+      VlogDef1="-verilog_define CoreConfig1"
+      shift
+      ;;
+    -conf2)
+      VlogDef1="-verilog_define CoreConfig2"
+      FileList="read_kudu_design.tcl"
+      shift
+      ;;
+    -rv32)
+      VlogDef2="-verilog_define forceRv32"
+      shift
+      ;;
+    -freq)
+      if [[ -n "$2" && "$2" != -* ]]; then
+        Freq="$2"
+        shift 2
+        continue
+      else
+        echo "Error: -freq requires a numeric argument" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "Warning: Unknown option $1" >&2
+      shift
+      ;;
+  esac
+done
+
+
+VlogDefs="$VlogDef1 $VlogDef2"
+IromFile="firmware/cpu0_irom_${Freq}mhz.vhx"
+
+echo "VlogDefs=$VlogDefs  FileList=$FileList  Freq=$Freq IROM=$IromFile"
 
 rm -f build.passed
-cp -f firmware/cpu0_irom_20mhz.vhx firmware/cpu0_irom.vhx
+
+cp -f $IromFile firmware/cpu0_irom.vhx
+
+DESIGNROOT="../"
+NETLISTDIR="RUN_$(date +%s)"
+mkdir $NETLISTDIR
 
 #vnc run  -Ir -wl -r vivado RAM/64000 x86_64 redhat7 --  
-vivado -mode batch -source cheri_fpga.tcl -log $NETLISTDIR/vivado.log -tclargs $DESIGNROOT $NETLISTDIR ./read_design.tcl ./arty-cheri-a7-100.xdc $SysclkFreq
+vivado -mode batch -source cheri_fpga.tcl -log $NETLISTDIR/vivado.log -tclargs $DESIGNROOT $NETLISTDIR $FileList ./arty-cheri-a7-100.xdc $Freq $VlogDef1 $VlogDef2
 

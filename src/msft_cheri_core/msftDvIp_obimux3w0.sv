@@ -18,15 +18,16 @@
 module mstr_mux # (
   parameter DBGMEM_START_ADDRESS = 32'h0000_0000,
   parameter DBGMEM_END_ADDRESS   = 32'h0300_0000,
-  parameter TCDEV_START_ADDRESS   = 32'h1000_0000,
-  parameter TCDEV_END_ADDRESS     = 32'h1800_0000,
+  parameter TCDEV_START_ADDRESS  = 32'h1000_0000,
+  parameter TCDEV_END_ADDRESS    = 32'h1800_0000,
   parameter IROM_START_ADDRESS   = 32'h2000_0000,
   parameter IROM_END_ADDRESS     = 32'h2004_0000,
   parameter IRAM_START_ADDRESS   = 32'h2004_0000,
   parameter IRAM_END_ADDRESS     = 32'h200C_0000,
   parameter DRAM_START_ADDRESS   = 32'h200F_0000,
   parameter DRAM_END_ADDRESS     = 32'h2010_0000,
-  parameter nSLV                 = 6
+  parameter nSLV                 = 6,
+  parameter DataWidth            = 33
   ) (
   input  logic                  clk_i,
   input  logic                  rstn_i,
@@ -36,20 +37,22 @@ module mstr_mux # (
   output logic                  mstr_gnt_o,
   input  logic [31:0]           mstr_addr_i,
   input  logic [3:0]            mstr_be_i,
-  input  logic [32:0]           mstr_wdata_i, 
+  input  logic                  mstr_is_cap_i,
+  input  logic [DataWidth-1:0]  mstr_wdata_i, 
   input  logic                  mstr_we_i, 
-  output logic [32:0]           mstr_rdata_o, 
+  output logic [DataWidth-1:0]  mstr_rdata_o, 
   output logic                  mstr_rvalid_o,
   output logic                  mstr_err_o,
                                
   output logic [nSLV-1:0]       slv_req_o,
   output logic [31:0]           slv_addr_o,
   output logic [3:0]            slv_be_o,
-  output logic [32:0]           slv_wdata_o, 
+  output logic                  slv_is_cap_o,
+  output logic [DataWidth-1:0]  slv_wdata_o, 
   output logic                  slv_we_o, 
   input  logic [nSLV-1:0]       slv_gnt_i,
   
-  input  logic [nSLV-1:0][32:0] slv_rdata_i, 
+  input  logic [nSLV-1:0][DataWidth-1:0] slv_rdata_i, 
   input  logic [nSLV-1:0]       slv_rvalid_i,
   input  logic [nSLV-1:0]       slv_err_i
   
@@ -80,6 +83,8 @@ module mstr_mux # (
   // pass through
   assign slv_addr_o   = mstr_addr_i;
   assign slv_be_o     = mstr_be_i;
+  assign slv_is_cap_o = mstr_is_cap_i;
+
   assign slv_we_o     = mstr_we_i;
   assign slv_wdata_o  = mstr_wdata_i;
 
@@ -115,7 +120,7 @@ module mstr_mux # (
     else
       slv_req_dec = 'h0;
 
-    mstr_rdata_o = 33'h0;
+    mstr_rdata_o = {DataWidth{1'b0}};
     for (i = 0; i < nSLV; i++) begin
       if (pending_slv_resp[i]) mstr_rdata_o = slv_rdata_i[i];
     end 
@@ -245,7 +250,8 @@ endmodule
 
 module slv_mem_mux # (
   parameter arbType = 1,   // 0: Absoulte priority, 1: round-robin
-  parameter nMSTR   = 3
+  parameter nMSTR   = 3,
+  parameter DataWidth = 33
   ) (
   input  logic                     clk_i,
   input  logic                     rstn_i,
@@ -255,18 +261,20 @@ module slv_mem_mux # (
   output logic [nMSTR-1:0]         mstr_gnt_o,
   input  logic [nMSTR-1:0][31:0]   mstr_addr_i,
   input  logic [nMSTR-1:0][3:0]    mstr_be_i,
-  input  logic [nMSTR-1:0][32:0]   mstr_wdata_i, 
+  input  logic [nMSTR-1:0]         mstr_is_cap_i,
+  input  logic [nMSTR-1:0][DataWidth-1:0]   mstr_wdata_i, 
   input  logic [nMSTR-1:0]         mstr_we_i, 
-  output logic [32:0]              mstr_rdata_o, 
+  output logic [DataWidth-1:0]     mstr_rdata_o, 
   output logic                     mstr_rvalid_o,
   output logic                     mstr_err_o,
                                
   output logic                     mem_en_o,
   output logic [31:0]              mem_addr_o,
-  output logic [32:0]              mem_wdata_o,
+  output logic [DataWidth-1:0]     mem_wdata_o,
   output logic                     mem_we_o,
+  output logic                     mem_is_cap_o,
   output logic [3:0]               mem_be_o,
-  input  logic [32:0]              mem_rdata_i,
+  input  logic [DataWidth-1:0]     mem_rdata_i,
   input  logic                     mem_ready_i,
   input  logic                     mem_error_i
 );
@@ -303,16 +311,18 @@ module slv_mem_mux # (
   always_comb begin
     int i;
 
-    mem_addr_o  = 32'h0;
-    mem_wdata_o = 33'h0;
-    mem_we_o    = 1'b0;
-    mem_be_o    = 4'h0;
+    mem_addr_o   = 32'h0;
+    mem_wdata_o  = {DataWidth{1'b0}};
+    mem_we_o     = 1'b0;
+    mem_be_o     = 4'h0;
+    mem_is_cap_o = 1'b0;
 
     for (i = 0; i < nMSTR; i++) begin
-      mem_addr_o  = mem_addr_o  | (mstr_addr_i[i] & {32{mstr_gnt[i]}});
-      mem_wdata_o = mem_wdata_o | (mstr_wdata_i[i] & {33{mstr_gnt[i]}});
-      mem_we_o    = mem_we_o    | (mstr_we_i[i] & mstr_gnt[i]);
-      mem_be_o    = mem_be_o    | (mstr_be_i[i] & {4{mstr_gnt[i]}});
+      mem_addr_o   = mem_addr_o  | (mstr_addr_i[i] & {32{mstr_gnt[i]}});
+      mem_wdata_o  = mem_wdata_o | (mstr_wdata_i[i] & {DataWidth{mstr_gnt[i]}});
+      mem_we_o     = mem_we_o    | (mstr_we_i[i] & mstr_gnt[i]);
+      mem_be_o     = mem_be_o    | (mstr_be_i[i] & {4{mstr_gnt[i]}});
+      mem_is_cap_o = mem_is_cap_o| (mstr_is_cap_i[i] & mstr_gnt[i]);
     end 
 
   end
@@ -329,12 +339,14 @@ endmodule
 
 // 
 //   Slave side mux for the AXI bus
+//     -- no cap access allowed on AXI 
 //
 
 module slv_axi_mux # (
   parameter AXI_ID             = 4'h0,
   parameter USER_BIT_WIDTH     = 12,
-  parameter nMSTR              = 3
+  parameter nMSTR              = 3,
+  parameter DataWidth          = 32
   ) (
   input  logic                       clk_i,
   input  logic                       rstn_i,
@@ -344,9 +356,9 @@ module slv_axi_mux # (
   output logic [nMSTR-1:0]           mstr_gnt_o,
   input  logic [nMSTR-1:0][31:0]     mstr_addr_i,
   input  logic [nMSTR-1:0][3:0]      mstr_be_i,
-  input  logic [nMSTR-1:0][32:0]     mstr_wdata_i, 
+  input  logic [nMSTR-1:0][DataWidth-1:0]     mstr_wdata_i, 
   input  logic [nMSTR-1:0]           mstr_we_i, 
-  output logic [32:0]                mstr_rdata_o, 
+  output logic [DataWidth-1:0]       mstr_rdata_o, 
   output logic                       mstr_rvalid_o,
   output logic                       mstr_err_o,
                                      
@@ -401,7 +413,7 @@ module slv_axi_mux # (
   logic             axi_wr_done, w_done, aw_done;
   logic             axi_acc_done, axi_resp_done;
   logic [31:0]      axi_addr;
-  logic [32:0]      axi_wdata;
+  logic [31:0]      axi_wdata;
   logic             axi_we, axi_we_q;
   logic [3:0]       axi_be;
 
@@ -466,7 +478,7 @@ module slv_axi_mux # (
 
     for (i = 0; i < nMSTR; i++) begin
       axi_addr  = axi_addr  | (mstr_addr_i[i] & {32{mstr_gnt_q[i]}});
-      axi_wdata = axi_wdata | (mstr_wdata_i[i] & {33{mstr_gnt_q[i]}});
+      axi_wdata = axi_wdata | (mstr_wdata_i[i] & {32{mstr_gnt_q[i]}});
       axi_we    = axi_we    | (mstr_we_i[i] & mstr_gnt_q[i]);
       axi_be    = axi_be    | (mstr_be_i[i] & {4{mstr_gnt_q[i]}});
     end 
@@ -514,9 +526,9 @@ endmodule
 
 
 module msftDvIp_obimux3w0 #(
-    parameter AXI_ID               = 4'h0,
-    parameter USER_BIT_WIDTH       = 12,
-    parameter DATA_WIDTH           = 33
+    parameter AXI_ID         = 4'h0,
+    parameter USER_BIT_WIDTH = 12,
+    parameter DataWidth      = 33
    ) (
   input                 clk_i,
   input                 rstn_i,
@@ -525,10 +537,11 @@ module msftDvIp_obimux3w0 #(
   output                data_gnt_o,
   input [31:0]          data_addr_i,
   input [3:0]           data_be_i,
-  input [32:0]          data_wdata_i, 
+  input                 data_is_cap_i,
+  input [DataWidth-1:0] data_wdata_i, 
   input                 data_we_i, 
 
-  output [32:0]         data_rdata_o,
+  output [DataWidth-1:0] data_rdata_o,
   output                data_rvalid_o,
   output                data_error_o,
   
@@ -536,7 +549,7 @@ module msftDvIp_obimux3w0 #(
   output                instr_gnt_o,
   input [31:0]          instr_addr_i,
 
-  output [32:0]         instr_rdata_o,
+  output [DataWidth-1:0] instr_rdata_o,
   output                instr_rvalid_o,
   output                instr_error_o,
 
@@ -544,55 +557,58 @@ module msftDvIp_obimux3w0 #(
   output                dbg_gnt_o,
   input [31:0]          dbg_addr_i,
   input [3:0]           dbg_be_i,
-  input [32:0]          dbg_wdata_i,
+  input [DataWidth-1:0] dbg_wdata_i,               // QQQ change later to be 65 bit compatible
   input                 dbg_we_i,
 
-  output [32:0]         dbg_rdata_o,
+  output [DataWidth-1:0] dbg_rdata_o,               // QQQ
   output                dbg_rvalid_o,
   output                dbg_error_o,
 
   output                DBGMEM_EN_o,
   output [31:0]         DBGMEM_ADDR_o,
-  output [32:0]         DBGMEM_WDATA_o,
+  output [DataWidth-1:0] DBGMEM_WDATA_o,            // QQQ
   output                DBGMEM_WE_o,
   output [3:0]          DBGMEM_BE_o,
-  input  [32:0]         DBGMEM_RDATA_i,
+  input  [DataWidth-1:0] DBGMEM_RDATA_i,            // QQQ 
   input                 DBGMEM_READY_i,
   input                 DBGMEM_ERROR_i,
 
   output                TCDEV_EN_o,
   output [31:0]         TCDEV_ADDR_o,
-  output [32:0]         TCDEV_WDATA_o,
+  output [31:0]         TCDEV_WDATA_o,
   output                TCDEV_WE_o,
   output [3:0]          TCDEV_BE_o,
-  input  [32:0]         TCDEV_RDATA_i,
+  input  [31:0]         TCDEV_RDATA_i,
   input                 TCDEV_READY_i,
   input                 TCDEV_ERROR_i,
 
   output                IROM_EN_o,
   output [31:0]         IROM_ADDR_o,
-  output [32:0]         IROM_WDATA_o,
+  output [DataWidth-1:0] IROM_WDATA_o,
   output                IROM_WE_o,
   output [3:0]          IROM_BE_o,
-  input  [32:0]         IROM_RDATA_i,
+  output                IROM_IS_CAP_o,
+  input  [DataWidth-1:0] IROM_RDATA_i,
   input                 IROM_READY_i,
   input                 IROM_ERROR_i,
 
   output                IRAM_EN_o,
   output [31:0]         IRAM_ADDR_o,
-  output [32:0]         IRAM_WDATA_o,
+  output [DataWidth-1:0] IRAM_WDATA_o,
   output                IRAM_WE_o,
   output [3:0]          IRAM_BE_o,
-  input  [32:0]         IRAM_RDATA_i,
+  output                IRAM_IS_CAP_o,
+  input  [DataWidth-1:0] IRAM_RDATA_i,
   input                 IRAM_READY_i,
   input                 IRAM_ERROR_i,
 
   output                DRAM_EN_o,
   output [31:0]         DRAM_ADDR_o,
-  output [32:0]         DRAM_WDATA_o,
+  output [DataWidth-1:0] DRAM_WDATA_o,
   output                DRAM_WE_o,
   output [3:0]          DRAM_BE_o,
-  input  [32:0]         DRAM_RDATA_i,
+  output                DRAM_IS_CAP_o,
+  input  [DataWidth-1:0] DRAM_RDATA_i,
   input                 DRAM_READY_i,
   input                 DRAM_ERROR_i,
 
@@ -646,69 +662,78 @@ module msftDvIp_obimux3w0 #(
   logic [nSLV-1:0]       cpud_req;
   logic [31:0]           cpud_addr;
   logic [3:0]            cpud_be;
-  logic [32:0]           cpud_wdata; 
+  logic                  cpud_is_cap;
+  logic [DataWidth-1:0]  cpud_wdata; 
   logic                  cpud_we; 
   logic [nSLV-1:0]       cpud_gnt;
 
   logic [nSLV-1:0]       cpui_req;
   logic [31:0]           cpui_addr;
   logic [3:0]            cpui_be;
-  logic [32:0]           cpui_wdata; 
+  logic [DataWidth-1:0]  cpui_wdata; 
   logic                  cpui_we; 
   logic [nSLV-1:0]       cpui_gnt;
 
   logic [nSLV-1:0]       dbgm_req;
   logic [31:0]           dbgm_addr;
   logic [3:0]            dbgm_be;
-  logic [32:0]           dbgm_wdata; 
+  logic                  dbgm_is_cap;
+  logic [DataWidth-1:0]  dbgm_wdata; 
   logic                  dbgm_we; 
   logic [nSLV-1:0]       dbgm_gnt;
 
-  logic [nSLV-1:0][32:0] s2m_rdata; 
+  logic [nSLV-1:0][DataWidth-1:0] s2m_rdata; 
   logic [nSLV-1:0]       s2m_rvalid;
   logic [nSLV-1:0]       s2m_err;
 
   logic [nMSTR-1:0]      dbgmem_req;
   logic [nMSTR-1:0]      dbgmem_gnt;
-  logic [32:0]           dbgmem_rdata; 
+  logic [DataWidth-1:0]  dbgmem_rdata; 
   logic                  dbgmem_rvalid;
   logic                  dbgmem_err;
 
   logic [nMSTR-1:0]      tcdev_req;
   logic [nMSTR-1:0]      tcdev_gnt;
-  logic [32:0]           tcdev_rdata; 
+  logic [DataWidth-1:0]  tcdev_rdata; 
+  logic [31:0]           tcdev_rdata32; 
   logic                  tcdev_rvalid;
   logic                  tcdev_err;
 
   logic [nMSTR-1:0]      irom_req;
   logic [nMSTR-1:0]      irom_gnt;
-  logic [32:0]           irom_rdata; 
+  logic [DataWidth-1:0]  irom_rdata; 
   logic                  irom_rvalid;
   logic                  irom_err;
 
   logic [nMSTR-1:0]      iram_req;
   logic [nMSTR-1:0]      iram_gnt;
-  logic [32:0]           iram_rdata; 
+  logic [DataWidth-1:0]  iram_rdata; 
   logic                  iram_rvalid;
   logic                  iram_err;
 
   logic [nMSTR-1:0]      dram_req;
   logic [nMSTR-1:0]      dram_gnt;
-  logic [32:0]           dram_rdata; 
+  logic [DataWidth-1:0]  dram_rdata; 
   logic                  dram_rvalid;
   logic                  dram_err;
 
   logic [nMSTR-1:0]      axi_req;
   logic [nMSTR-1:0]      axi_gnt;
-  logic [32:0]           axi_rdata; 
+  logic [DataWidth-1:0]  axi_rdata; 
+  logic [31:0]           axi_rdata32; 
   logic                  axi_rvalid;
   logic                  axi_err;
 
 
   logic [nMSTR-1:0][31:0]   m2s_addr;
   logic [nMSTR-1:0][3:0]    m2s_be;
-  logic [nMSTR-1:0][32:0]   m2s_wdata; 
+  logic [nMSTR-1:0]         m2s_is_cap;
+  logic [nMSTR-1:0][DataWidth-1:0]   m2s_wdata; 
   logic [nMSTR-1:0]         m2s_we; 
+
+  logic [DataWidth-1:0]   instr_rdata;
+  logic [DataWidth-1:0]   dbg_rdata, dbg_wdata;
+  logic [nMSTR-1:0][31:0] m2s_wdata32; 
 
   assign cpud_gnt = {axi_gnt[0], dram_gnt[0] , iram_gnt[0], irom_gnt[0], tcdev_gnt[0], dbgmem_gnt[0]};
   assign cpui_gnt = {axi_gnt[1], dram_gnt[1] , iram_gnt[1], irom_gnt[1], tcdev_gnt[1], dbgmem_gnt[1]};
@@ -727,19 +752,40 @@ module msftDvIp_obimux3w0 #(
 
   assign m2s_addr   = {dbgm_addr, cpui_addr, cpud_addr};      // shared
   assign m2s_be     = {dbgm_be, cpui_be, cpud_be};            // shared
+  assign m2s_is_cap = {dbgm_is_cap, 1'b0, cpud_is_cap};              // shared
   assign m2s_we     = {dbgm_we, cpui_we, cpud_we};            // shared
   assign m2s_wdata  = {dbgm_wdata, cpui_wdata, cpud_wdata};   // shared
+
+  // Data Width Adaptation
+  assign instr_rdata_o = instr_rdata;
+
+  assign dbg_rdata_o   = dbg_rdata;   // QQQ
+  assign dbg_wdata     = dbg_wdata_i;
+
+  if (DataWidth == 65) begin
+    assign axi_rdata   = {1'b0, axi_rdata32, axi_rdata32};
+    assign tcdev_rdata = {1'b0, tcdev_rdata32, tcdev_rdata32};
+  end else begin
+    assign axi_rdata   = {1'h0, axi_rdata32};
+    assign tcdev_rdata = {1'h0,tcdev_rdata32};
+  end
+
+  for (genvar i = 0; i < nMSTR; i++) begin : gen_m2s_wdata32
+    assign m2s_wdata32[i] = m2s_wdata[i][31:0];
+  end
+
 
   //
   // Master-side muxes
   //
-  mstr_mux u_cpud_mstr_mux (
+  mstr_mux #(.DataWidth(DataWidth)) u_cpud_mstr_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (data_req_i),
     .mstr_gnt_o      (data_gnt_o),
     .mstr_addr_i     (data_addr_i),
     .mstr_be_i       (data_be_i),
+    .mstr_is_cap_i   (data_is_cap_i),
     .mstr_wdata_i    (data_wdata_i),
     .mstr_we_i       (data_we_i), 
     .mstr_rdata_o    (data_rdata_o),
@@ -748,6 +794,7 @@ module msftDvIp_obimux3w0 #(
     .slv_req_o       (cpud_req),
     .slv_addr_o      (cpud_addr),
     .slv_be_o        (cpud_be),
+    .slv_is_cap_o    (cpud_is_cap),
     .slv_wdata_o     (cpud_wdata),
     .slv_we_o        (cpud_we), 
     .slv_gnt_i       (cpud_gnt),
@@ -756,21 +803,23 @@ module msftDvIp_obimux3w0 #(
     .slv_err_i       (s2m_err)
   );
 
-  mstr_mux u_cpui_mstr_mux (
+  mstr_mux #(.DataWidth(DataWidth)) u_cpui_mstr_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (instr_req_i),
     .mstr_gnt_o      (instr_gnt_o),
     .mstr_addr_i     (instr_addr_i),
     .mstr_be_i       (4'b1111),
-    .mstr_wdata_i    (33'h0),
+    .mstr_is_cap_i   (1'b0),
+    .mstr_wdata_i    ({DataWidth{1'b0}}),
     .mstr_we_i       (1'b0), 
-    .mstr_rdata_o    (instr_rdata_o),
+    .mstr_rdata_o    (instr_rdata),
     .mstr_rvalid_o   (instr_rvalid_o),
     .mstr_err_o      (instr_error_o),
     .slv_req_o       (cpui_req),
     .slv_addr_o      (cpui_addr),
     .slv_be_o        (cpui_be),
+    .slv_is_cap_o    (),
     .slv_wdata_o     (cpui_wdata),
     .slv_we_o        (cpui_we), 
     .slv_gnt_i       (cpui_gnt),
@@ -779,21 +828,23 @@ module msftDvIp_obimux3w0 #(
     .slv_err_i       (s2m_err)
   );
 
-  mstr_mux u_dbgm_mstr_mux (
+  mstr_mux #(.DataWidth(DataWidth)) u_dbgm_mstr_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (dbg_req_i),
     .mstr_gnt_o      (dbg_gnt_o),
     .mstr_addr_i     (dbg_addr_i),
     .mstr_be_i       (dbg_be_i),
-    .mstr_wdata_i    (dbg_wdata_i),
+    .mstr_is_cap_i   (1'b1),
+    .mstr_wdata_i    (dbg_wdata),
     .mstr_we_i       (dbg_we_i), 
-    .mstr_rdata_o    (dbg_rdata_o),
+    .mstr_rdata_o    (dbg_rdata),
     .mstr_rvalid_o   (dbg_rvalid_o),
     .mstr_err_o      (dbg_error_o),
     .slv_req_o       (dbgm_req),
     .slv_addr_o      (dbgm_addr),
     .slv_be_o        (dbgm_be),
+    .slv_is_cap_o    (dbgm_is_cap),
     .slv_wdata_o     (dbgm_wdata),
     .slv_we_o        (dbgm_we), 
     .slv_gnt_i       (dbgm_gnt),
@@ -805,13 +856,14 @@ module msftDvIp_obimux3w0 #(
   //
   // Slave-side muxes
   //
-  slv_mem_mux u_dbg_mem_slv_mux (
+  slv_mem_mux #(.DataWidth(DataWidth)) u_dbg_mem_slv_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (dbgmem_req),
     .mstr_gnt_o      (dbgmem_gnt),
     .mstr_addr_i     (m2s_addr),
     .mstr_be_i       (m2s_be),
+    .mstr_is_cap_i   (m2s_is_cap),
     .mstr_wdata_i    (m2s_wdata),
     .mstr_we_i       (m2s_we), 
     .mstr_rdata_o    (dbgmem_rdata),
@@ -822,21 +874,23 @@ module msftDvIp_obimux3w0 #(
     .mem_wdata_o     (DBGMEM_WDATA_o),
     .mem_we_o        (DBGMEM_WE_o),
     .mem_be_o        (DBGMEM_BE_o),
+    .mem_is_cap_o    (),
     .mem_rdata_i     (DBGMEM_RDATA_i),
     .mem_ready_i     (DBGMEM_READY_i),
     .mem_error_i     (DBGMEM_ERROR_i)
   );                 
     
-  slv_mem_mux u_tcdev_slv_mux (
+  slv_mem_mux #(.DataWidth(32)) u_tcdev_slv_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (tcdev_req),
     .mstr_gnt_o      (tcdev_gnt),
     .mstr_addr_i     (m2s_addr),
     .mstr_be_i       (m2s_be),
-    .mstr_wdata_i    (m2s_wdata),
+    .mstr_is_cap_i   (m2s_is_cap),
+    .mstr_wdata_i    (m2s_wdata32),
     .mstr_we_i       (m2s_we), 
-    .mstr_rdata_o    (tcdev_rdata),
+    .mstr_rdata_o    (tcdev_rdata32),
     .mstr_rvalid_o   (tcdev_rvalid),
     .mstr_err_o      (tcdev_err),
     .mem_en_o        (TCDEV_EN_o),
@@ -844,18 +898,20 @@ module msftDvIp_obimux3w0 #(
     .mem_wdata_o     (TCDEV_WDATA_o),
     .mem_we_o        (TCDEV_WE_o),
     .mem_be_o        (TCDEV_BE_o),
+    .mem_is_cap_o    (),
     .mem_rdata_i     (TCDEV_RDATA_i),
     .mem_ready_i     (TCDEV_READY_i),
     .mem_error_i     (TCDEV_ERROR_i)
   );                 
 
-  slv_mem_mux u_irom_slv_mux (
+  slv_mem_mux #(.DataWidth(DataWidth)) u_irom_slv_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (irom_req),
     .mstr_gnt_o      (irom_gnt),
     .mstr_addr_i     (m2s_addr),
     .mstr_be_i       (m2s_be),
+    .mstr_is_cap_i   (m2s_is_cap),
     .mstr_wdata_i    (m2s_wdata),
     .mstr_we_i       (m2s_we), 
     .mstr_rdata_o    (irom_rdata),
@@ -866,18 +922,20 @@ module msftDvIp_obimux3w0 #(
     .mem_wdata_o     (IROM_WDATA_o),
     .mem_we_o        (IROM_WE_o),
     .mem_be_o        (IROM_BE_o),
+    .mem_is_cap_o    (IROM_IS_CAP_o),
     .mem_rdata_i     (IROM_RDATA_i),
     .mem_ready_i     (IROM_READY_i),
     .mem_error_i     (IROM_ERROR_i)
   );                 
 
-  slv_mem_mux u_iram_slv_mux (
+  slv_mem_mux #(.DataWidth(DataWidth)) u_iram_slv_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (iram_req),
     .mstr_gnt_o      (iram_gnt),
     .mstr_addr_i     (m2s_addr),
     .mstr_be_i       (m2s_be),
+    .mstr_is_cap_i   (m2s_is_cap),
     .mstr_wdata_i    (m2s_wdata),
     .mstr_we_i       (m2s_we), 
     .mstr_rdata_o    (iram_rdata),
@@ -888,18 +946,20 @@ module msftDvIp_obimux3w0 #(
     .mem_wdata_o     (IRAM_WDATA_o),
     .mem_we_o        (IRAM_WE_o),
     .mem_be_o        (IRAM_BE_o),
+    .mem_is_cap_o    (IRAM_IS_CAP_o),
     .mem_rdata_i     (IRAM_RDATA_i),
     .mem_ready_i     (IRAM_READY_i),
     .mem_error_i     (IRAM_ERROR_i)
   );                 
 
-  slv_mem_mux u_dram_slv_mux (
+  slv_mem_mux #(.DataWidth(DataWidth)) u_dram_slv_mux (
     .clk_i           (clk_i), 
     .rstn_i          (rstn_i),
     .mstr_req_i      (dram_req),
     .mstr_gnt_o      (dram_gnt),
     .mstr_addr_i     (m2s_addr),
     .mstr_be_i       (m2s_be),
+    .mstr_is_cap_i   (m2s_is_cap),
     .mstr_wdata_i    (m2s_wdata),
     .mstr_we_i       (m2s_we), 
     .mstr_rdata_o    (dram_rdata),
@@ -910,9 +970,10 @@ module msftDvIp_obimux3w0 #(
     .mem_wdata_o     (DRAM_WDATA_o),
     .mem_we_o        (DRAM_WE_o),
     .mem_be_o        (DRAM_BE_o),
+    .mem_is_cap_o    (DRAM_IS_CAP_o),
     .mem_rdata_i     (DRAM_RDATA_i),
     .mem_ready_i     (DRAM_READY_i),
-    .mem_error_i     (IRAM_ERROR_i)
+    .mem_error_i     (DRAM_ERROR_i)
   );
                  
   slv_axi_mux u_slv_axi_mux (
@@ -922,9 +983,9 @@ module msftDvIp_obimux3w0 #(
     .mstr_gnt_o      (axi_gnt),
     .mstr_addr_i     (m2s_addr),
     .mstr_be_i       (m2s_be),
-    .mstr_wdata_i    (m2s_wdata),
+    .mstr_wdata_i    (m2s_wdata32),
     .mstr_we_i       (m2s_we), 
-    .mstr_rdata_o    (axi_rdata),
+    .mstr_rdata_o    (axi_rdata32),
     .mstr_rvalid_o   (axi_rvalid),
     .mstr_err_o      (axi_err),
     .AWID_o          (AWID_o    ),    

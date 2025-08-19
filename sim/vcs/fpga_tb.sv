@@ -4,8 +4,8 @@
 `timescale 1ns/1ps
 
 module fpga_tb ();
-  import ibex_pkg::*;
-  import prim_ram_1p_pkg::*;
+  // import ibex_pkg::*;
+  // import prim_ram_1p_pkg::*;
 
   logic       board_clk, sysclk;
   logic       rst_n;
@@ -90,6 +90,9 @@ module fpga_tb ();
     rst_n = 1'b1;
     #1;
     rst_n = 1'b0;
+
+    $display("TB > Configration: DW = %d, UseIbex=%d, IROM = %s, IRAM = %s",
+             dut.MemDataWidth, dut.UseIbex, dut.IROM_INIT_FILE, dut. IRAM_INIT_FILE);
    
     repeat(5) @(posedge board_clk);
     #1;

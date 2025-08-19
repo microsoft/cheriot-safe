@@ -10,8 +10,8 @@
 // Module msftDvIp_cheri_arty7_fpga Definition
 // ==================================================
 module msftDvIp_cheri_arty7_fpga # (
-  parameter int SysclkDiv1GHz = 50
-)(
+  parameter int unsigned SysclkDiv1GHz  = 50
+) (
   input                                      board_clk_i,
   input                                      board_rstn_i,
   input                                      ssel0_i,
@@ -51,7 +51,30 @@ module msftDvIp_cheri_arty7_fpga # (
   output                                     eth_ref_clk_o
 );
 
-localparam UseEthMACinDMB = 1'b0;
+`ifdef CoreConfig1       // ibex 65-bit data interface
+  localparam int unsigned MemDataWidth   = 65;
+  localparam bit          UseIbex        = 1'b1;
+  localparam              IROM_INIT_FILE = "firmware/cpu0_irom64.vhx";
+  localparam              IRAM_INIT_FILE = "firmware/cpu0_iram64.vhx";
+`elsif CoreConfig2       // Kudu (always 65 bit)
+  localparam int unsigned MemDataWidth   = 65;
+  localparam bit          UseIbex        = 1'b0;
+  localparam              IROM_INIT_FILE = "firmware/cpu0_irom64.vhx";
+  localparam              IRAM_INIT_FILE = "firmware/cpu0_iram64.vhx";
+`else                    // default configuration, ibex 33-bit data interface
+  localparam int unsigned MemDataWidth   = 33;
+  localparam bit          UseIbex        = 1'b1;
+  localparam              IROM_INIT_FILE = "firmware/cpu0_irom.vhx";
+  localparam              IRAM_INIT_FILE = "firmware/cpu0_iram.vhx";
+`endif
+
+`ifdef ForceRV32
+  localparam bit ForceRV32 = 1'b1;
+`else
+  localparam bit ForceRV32 = 1'b0;
+`endif
+
+  localparam UseEthMACinDMB = 1'b0;
 
 // ==================================================
 // Internal Wire Signals
@@ -329,12 +352,15 @@ assign TDI_d     = TDO_dvp;
 // Instance msftDvIp_cheri0_subsystem
 // ==================================================
 msftDvIp_cheri0_subsystem #(
-  .IROM_INIT_FILE("firmware/cpu0_irom.vhx"),
-  .IRAM_INIT_FILE("firmware/cpu0_iram.vhx"),
-  .IROM_DEPTH('h4000),
-  .IRAM_DEPTH('h10000),
-  .DRAM_DEPTH('h4000)
-  ) msftDvIp_cheri0_subsystem_i (
+  .IROM_INIT_FILE(IROM_INIT_FILE),
+  .IRAM_INIT_FILE(IRAM_INIT_FILE),
+  .IROM_DEPTH32('h4000),
+  .IRAM_DEPTH32('h10000),
+  .DRAM_DEPTH32('h4000),
+  .MEM_DATA_WIDTH(MemDataWidth),
+  .UseIbex(UseIbex),
+  .ForceRV32(ForceRV32)
+) msftDvIp_cheri0_subsystem_i (
   .clk_i                         ( sysclk                                   ),
   .rstn_i                        ( rstn                                     ),
   .TRSTn_i                       ( TRSTn_mux                                ),

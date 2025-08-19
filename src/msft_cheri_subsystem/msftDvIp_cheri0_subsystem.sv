@@ -20,11 +20,14 @@ module msftDvIp_cheri0_subsystem #(
     parameter DVP_DMB_STRB_WIDTH = 4,
     parameter IROM_INIT_FILE = "",
     parameter IRAM_INIT_FILE = "",
-    parameter IROM_DEPTH = 'h4000,
-    parameter IRAM_DEPTH = 'h1_0000,
-    parameter DRAM_DEPTH = 'h4000,
+    parameter IROM_DEPTH32 = 'h4000,
+    parameter IRAM_DEPTH32 = 'h1_0000,
+    parameter DRAM_DEPTH32 = 'h4000,
     parameter DEF_ALT_FUNC0 = 32'h0000_0000,
-    parameter DEF_ALT_FUNC1 = 32'h0000_0000
+    parameter DEF_ALT_FUNC1 = 32'h0000_0000,
+    parameter MEM_DATA_WIDTH = 33,
+    parameter bit UseIbex   = 1'b1,
+    parameter bit ForceRV32 = 1'b0
   ) (
   input                                      clk_i,
   input                                      rstn_i,
@@ -282,28 +285,31 @@ wire                                     ready_ksu;
 wire                                     rstn_ss;
 wire                                     IROM_EN;
 wire [31:0]                              IROM_ADDR;
-wire [33-1:0]                            IROM_RDATA;
+wire                                     IROM_IS_CAP;
+wire [MEM_DATA_WIDTH-1:0]                IROM_RDATA;
 wire                                     IROM_READY;
 wire                                     IROM_ERROR;
 wire                                     IRAM_EN;
 wire [31:0]                              IRAM_ADDR;
-wire [33-1:0]                            IRAM_WDATA;
+wire [MEM_DATA_WIDTH-1:0]                IRAM_WDATA;
 wire                                     IRAM_WE;
 wire [3:0]                               IRAM_BE;
-wire [33-1:0]                            IRAM_RDATA;
+wire                                     IRAM_IS_CAP;
+wire [MEM_DATA_WIDTH-1:0]                IRAM_RDATA;
 wire                                     IRAM_READY;
 wire                                     IRAM_ERROR;
 wire                                     DRAM_EN;
 wire [31:0]                              DRAM_ADDR;
-wire [33-1:0]                            DRAM_WDATA;
+wire                                     DRAM_IS_CAP;
+wire [MEM_DATA_WIDTH-1:0]                DRAM_WDATA;
 wire                                     DRAM_WE;
 wire [3:0]                               DRAM_BE;
-wire [33-1:0]                            DRAM_RDATA;
+wire [MEM_DATA_WIDTH-1:0]                DRAM_RDATA;
 wire                                     DRAM_READY;
 wire                                     DRAM_ERROR;
 wire                                     tsmap_cs;
 wire [15:0]                              tsmap_addr;
-wire [33-1:0]                            tsmap_rdata;
+wire [MEM_DATA_WIDTH-1:0]                tsmap_rdata;
 
 // ==================================================
 // Instance msftDvIp_dmb wire definitions
@@ -540,10 +546,10 @@ wire [3:0]                               dw_oen;
 // ==================================================
 wire                                     TCDEV_EN;
 wire [31:0]                              TCDEV_ADDR;
-wire [33-1:0]                            TCDEV_WDATA;
+wire [31:0]                              TCDEV_WDATA;
 wire                                     TCDEV_WE;
 wire [3:0]                               TCDEV_BE;
-wire [33-1:0]                            TCDEV_RDATA;
+wire [31:0]                              TCDEV_RDATA;
 wire                                     TCDEV_READY;
 wire [127:0]                             mmreg_corein;
 wire [63:0]                              mmreg_coreout;
@@ -590,29 +596,6 @@ defparam `SS_IROM_PATH.RAM_BACK_DOOR_ENABLE=1;
   assign `SS_IRAM_PATH.wstrb_bkdr = bd1_iram_wstrb;
   assign bd1_iram_dout = `SS_IRAM_PATH.dout;
   assign bd1_iram_ready = `SS_IRAM_PATH.rdy_bkdr;
-`define SS_CORE_PATH msftDvIp_cheri_core0_i.msftDvIp_cheri_core_wrapper_i.ibex_top_i.u_ibex_top.u_ibex_core
- assign pc_dvp = `SS_CORE_PATH.if_stage_i.pc_id_o;
- assign cpu_rst = ~`SS_CORE_PATH.rst_ni;
- assign inst_valid         = `SS_CORE_PATH.instr_id_done;
- assign branch             = `SS_CORE_PATH.id_stage_i.pc_set_o;
-logic [3:0] ctlsm, lsusm;
-logic [1:0] fifo_cnt;
- assign ctlsm        = `SS_CORE_PATH.id_stage_i.controller_i.ctrl_fsm_cs[3:0];
- assign lsusm        = `SS_CORE_PATH.load_store_unit_i.ls_fsm_cs[3:0];
- assign cpuexp       = `SS_CORE_PATH.id_stage_i.controller_i.id_exception_o;
- assign cpuexc       = `SS_CORE_PATH.id_stage_i.controller_i.id_exception_o;
- assign valid        = `SS_CORE_PATH.id_stage_i.instr_valid_i;
- assign stall_id     = `SS_CORE_PATH.id_stage_i.stall_id;
- assign stall_mem    = `SS_CORE_PATH.id_stage_i.stall_mem;
- assign stall_wb     = `SS_CORE_PATH.id_stage_i.stall_wb;
- assign if_req       = `SS_CORE_PATH.if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.valid_req;
- assign fifo_cnt     = 'h0;
- assign ss_status  = {14'h0, fifo_cnt, lsusm, ctlsm, 2'h0, stall_mem, if_req, stall_id, stall_wb, cpuexc, cpu_rst};
- assign cheri_ex_dbg_status = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_status;
- assign cheri_operator      = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.cheri_operator_i;
- assign cheri_ex_cs1_vec    = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_cs1_vec;
- assign cheri_ex_cs2_vec    = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_cs2_vec;
- assign cheri_ex_cd_vec     = `SS_CORE_PATH.g_cheri_ex.u_cheri_ex.dbg_cd_vec;
 
 // ==================================================
 // Instance msftDvDebug_backdoor_v0
@@ -696,20 +679,22 @@ assign rstn_ss = rstn & rstn_bkdr;
 msftDvIp_riscv_memory_v0 #(
   .IROM_INIT_FILE(IROM_INIT_FILE),
   .IRAM_INIT_FILE(IRAM_INIT_FILE),
-  .IROM_DEPTH(IROM_DEPTH),
-  .IRAM_DEPTH(IRAM_DEPTH),
-  .DRAM_DEPTH(DRAM_DEPTH),
-  .DATA_WIDTH(33)
+  .IROM_DEPTH32(IROM_DEPTH32),
+  .IRAM_DEPTH32(IRAM_DEPTH32),
+  .DRAM_DEPTH32(DRAM_DEPTH32),
+  .DATA_WIDTH(MEM_DATA_WIDTH)
   ) msftDvIp_riscv_memory_v0_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn_ss                                  ),
   .IROM_EN_i                     ( IROM_EN                                  ),
   .IROM_ADDR_i                   ( IROM_ADDR                                ),
+  .IROM_IS_CAP_i                 ( IROM_IS_CAP                              ),
   .IROM_RDATA_o                  ( IROM_RDATA                               ),
   .IROM_READY_o                  ( IROM_READY                               ),
   .IROM_ERROR_o                  ( IROM_ERROR                               ),
   .IRAM_EN_i                     ( IRAM_EN                                  ),
   .IRAM_ADDR_i                   ( IRAM_ADDR                                ),
+  .IRAM_IS_CAP_i                 ( IRAM_IS_CAP                              ),
   .IRAM_WDATA_i                  ( IRAM_WDATA                               ),
   .IRAM_WE_i                     ( IRAM_WE                                  ),
   .IRAM_BE_i                     ( IRAM_BE                                  ),
@@ -718,6 +703,7 @@ msftDvIp_riscv_memory_v0 #(
   .IRAM_ERROR_o                  ( IRAM_ERROR                               ),
   .DRAM_EN_i                     ( DRAM_EN                                  ),
   .DRAM_ADDR_i                   ( DRAM_ADDR                                ),
+  .DRAM_IS_CAP_i                 ( DRAM_IS_CAP                              ),
   .DRAM_WDATA_i                  ( DRAM_WDATA                               ),
   .DRAM_WE_i                     ( DRAM_WE                                  ),
   .DRAM_BE_i                     ( DRAM_BE                                  ),
@@ -1187,16 +1173,22 @@ assign irqs_ext = 0;
 // ==================================================
 // Instance msftDvIp_cheri_core0
 // ==================================================
-msftDvIp_cheri_core0 msftDvIp_cheri_core0_i (
+msftDvIp_cheri_core0 #(
+  .DATA_WIDTH(MEM_DATA_WIDTH), 
+  .UseIbex(UseIbex), 
+  .ForceRV32(ForceRV32)
+) msftDvIp_cheri_core0_i (
   .clk_i                         ( clk                                      ),
   .rstn_i                        ( rstn_ss                                  ),
   .IROM_EN_o                     ( IROM_EN                                  ),
   .IROM_ADDR_o                   ( IROM_ADDR                                ),
+  .IROM_IS_CAP_o                 ( IROM_IS_CAP                              ),
   .IROM_RDATA_i                  ( IROM_RDATA                               ),
   .IROM_READY_i                  ( IROM_READY                               ),
   .IROM_ERROR_i                  ( IROM_ERROR                               ),
   .IRAM_EN_o                     ( IRAM_EN                                  ),
   .IRAM_ADDR_o                   ( IRAM_ADDR                                ),
+  .IRAM_IS_CAP_o                 ( IRAM_IS_CAP                              ),
   .IRAM_WDATA_o                  ( IRAM_WDATA                               ),
   .IRAM_WE_o                     ( IRAM_WE                                  ),
   .IRAM_BE_o                     ( IRAM_BE                                  ),
@@ -1205,6 +1197,7 @@ msftDvIp_cheri_core0 msftDvIp_cheri_core0_i (
   .IRAM_ERROR_i                  ( IRAM_ERROR                               ),
   .DRAM_EN_o                     ( DRAM_EN                                  ),
   .DRAM_ADDR_o                   ( DRAM_ADDR                                ),
+  .DRAM_IS_CAP_o                 ( DRAM_IS_CAP                              ),
   .DRAM_WDATA_o                  ( DRAM_WDATA                               ),
   .DRAM_WE_o                     ( DRAM_WE                                  ),
   .DRAM_BE_o                     ( DRAM_BE                                  ),
@@ -1225,7 +1218,7 @@ msftDvIp_cheri_core0 msftDvIp_cheri_core0_i (
   .irq_external_i                ( irq_external                             ),
   .tsmap_cs_o                    ( tsmap_cs                                 ),
   .tsmap_addr_o                  ( tsmap_addr                               ),
-  .tsmap_rdata_i                 ( tsmap_rdata[31:0]                        ),
+  .tsmap_rdata_i                 ( tsmap_rdata                              ),
   .arid_cpu_m_o                  ( arid_cpu_m                               ),
   .araddr_cpu_m_o                ( araddr_cpu_m                             ),
   .arlen_cpu_m_o                 ( arlen_cpu_m                              ),

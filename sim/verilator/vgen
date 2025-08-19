@@ -1,5 +1,29 @@
 #!/bin/bash
-#verilator -cc --top-module  msftDvIp_cheri_arty7_fpga -exe tb.cc --trace -F all.f 
+
+VlogDef1=""
+VlogDef2=""
+FileList="all.ibex.f"
+
+# Loop over args
+for arg in "$@"; do
+  case "$arg" in
+    -conf1) 
+      VlogDef1="+define+CoreConfig1" ;;
+    -conf2) 
+      VlogDef1="+define+CoreConfig2" 
+      FileList="all.kudu.f"
+      ;;
+    -rv32)  VlogDef2="+define+ForceRV32" ;;
+    *)
+      echo "Warning: Unknown option $arg" >&2
+      ;;
+  esac
+done
+
+VlogDefs="$VlogDef1 $VlogDef2"
+echo "VlogDefs=$VlogDefs  FileList=$FileList"
+
+rm -rf obj_dir
 export DesignRoot=../..
-export VeriRoot=$DesignRoot/sim/verilator
-verilator -cc --top-module  swci_vtb -exe $VeriRoot/swci_main.cc --trace -f $VeriRoot/all.f 
+#verilator --version
+verilator -cc --timing --top-module  swci_vtb -exe ./swci_main.cc --trace $VlogDefs  -f $FileList 

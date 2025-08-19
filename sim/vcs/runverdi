@@ -1,5 +1,3 @@
-#!/usr/local/bin/bash
-#
 VlogDef1=""
 VlogDef2=""
 FileList="all.ibex.f"
@@ -24,5 +22,4 @@ VlogDefs="$VlogDef1 $VlogDef2"
 echo "VlogDefs=$VlogDefs  FileList=$FileList"
 
 export DesignRoot=../..
-rm simv.daidir/.vcs.timestamp
-vcs -full64 -sverilog -xlrm uniq_prior_final +systemverilogext+sv +lint=TFIPC-L -timescale=1ns/1ps -debug_acc+all $VlogDefs -f $FileList
+verdi -sv $VlogDefs -f $FileList -ssf ./fpga_tb.fsdb 
