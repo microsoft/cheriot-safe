@@ -1,4 +1,4 @@
-##Steps to build FPGA for the arty-a7-100 board:
+## Steps to build FPGA for the arty-a7-100 board:
 1. Install AMD/Xilinx Vivado tool suite
 2. Place the firmware images (hex file) at ./firmware/cpu0_iram.vhx, or /firmware/cpu0_iram64.vhx if you are using configuration conf1 or conf2.
 4. Build the FPGA bit file
