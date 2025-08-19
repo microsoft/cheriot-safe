@@ -1,5 +1,0 @@
-#!/bin/bash
-#verilator -cc --top-module  msftDvIp_cheri_arty7_fpga -exe tb.cc --trace -F all.f 
-export DesignRoot=../..
-export VeriRoot=$DesignRoot/sim/verilator
-verilator -cc --top-module  swci_vtb -exe $VeriRoot/swci_main.cc --trace +define+FORCE_PMODE_RV32=1 -f $VeriRoot/all_trace.f 
