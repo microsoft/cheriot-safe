@@ -31,8 +31,10 @@ cheriot-safe currently support 3 MCU configurations:
 - configuation 0 (default): cheriot-ibex with 33-bit data interface
 - configuation 1: cheriot-ibex with 65-bit data interface
 - configuation 2: cheriot-kudu (always use 65-bit data interface)
-  - The simulation and build scripts allows choosing configurations via command line swithces (-conf1, -conf2, etc).
-  - Selecting between the CHERIoT mode and RV32 mode (which runs rv32imc images) is also supported (by -rv32 switch).
+
+The simulation and build scripts allows
+- choosing configurations via command line swithces (-conf1, -conf2).
+- selecting between the CHERIoT mode and RV32 mode (which runs rv32imc images) by -rv32 switch.
 
 ## Running a vcs or verilator simulation
 See the readme and examples under [sim/](https://github.com/microsoft/cheriot-safe/tree/main/sim).
