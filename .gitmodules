@@ -1,3 +1,6 @@
 [submodule "cheriot-ibex"]
 	path = cheriot-ibex
 	url = https://github.com/microsoft/cheriot-ibex
+[submodule "cheriot-kudu"]
+	path = cheriot-kudu
+	url = git@github.com:microsoft/cheriot-kudu.git
