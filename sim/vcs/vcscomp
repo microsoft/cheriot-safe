@@ -2,6 +2,7 @@
 #
 VlogDef1=""
 VlogDef2=""
+VlogDef3=""
 FileList="all.ibex.f"
 
 # Loop over args
@@ -14,13 +15,14 @@ for arg in "$@"; do
       FileList="all.kudu.f"
       ;;
     -rv32)  VlogDef2="+define+ForceRV32" ;;
+    -nowave) VlogDef3="+define+NoWave" ;;
     *)
       echo "Warning: Unknown option $arg" >&2
       ;;
   esac
 done
 
-VlogDefs="$VlogDef1 $VlogDef2"
+VlogDefs="$VlogDef1 $VlogDef2 $VlogDef3"
 echo "VlogDefs=$VlogDefs  FileList=$FileList"
 
 export DesignRoot=../..

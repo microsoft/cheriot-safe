@@ -87,6 +87,11 @@ module fpga_tb ();
   end
 
   initial begin
+    int timeout, cycle_cnt, i;
+    timeout   = 10* 1000* 1000;   // default timeout
+    cycle_cnt = 0;
+
+    i = $value$plusargs("TIMEOUT=%d", timeout);
     rst_n = 1'b1;
     #1;
     rst_n = 1'b0;
@@ -100,17 +105,22 @@ module fpga_tb ();
 
     repeat(10) @(posedge board_clk);
 
-    while (end_sim_flag == 0)
+    while (end_sim_flag == 0) begin
       @(posedge board_clk);
+      cycle_cnt += 1;
+      if (cycle_cnt > timeout) break;
+    end
 
     $finish();
  
   end
 
+`ifndef NoWave
   initial begin
     #0 $fsdbDumpfile("fpga_tb.fsdb");
     $fsdbDumpvars(0, "+all", fpga_tb); 
   end
+`endif
 
 
   assign uart_tx_fifo_wr = dut.msftDvIp_cheri0_subsystem_i.msftDvIp_periph_wrapper_v0_i.msftDvIp_uart_i.msftDvIp_uart_tx_fifo_i.wr_i;
