@@ -9,7 +9,6 @@
 -Wno-INITIALDLY
 -Wno-CASEX
 -Wno-LATCH
-+define+RVFI=1
 +define+CHERIoT
 +define+XILINX_PLL_MODEL__
 +incdir+$DesignRoot/cheriot-kudu/rtl/

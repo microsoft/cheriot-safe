@@ -47,16 +47,21 @@ module msftDvIp_clint_tmr (
       mtimecmp_lo  <= 32'h0;
       sw_intr_reg  <= 1'b0;
     end else begin
-      if(wr_op) begin
+      if (wr_op) begin
         casez(reg_addr_i[7:2]) 
           6'h6: mtimecmp_lo <= reg_wdata_i;
           6'h7: mtimecmp_hi <= reg_wdata_i;
         endcase
       end
 
-      mtime_lo <= mtime_lo + 1;
+      if (wr_op && (reg_addr_i[7:2] == 6'h4))
+        mtime_lo <= reg_wdata_i;
+      else 
+        mtime_lo <= mtime_lo + 1;
 
-      if (mtime_lo == 32'hffff_ffff)
+      if (wr_op && (reg_addr_i[7:2] == 6'h5))
+        mtime_hi    <= reg_wdata_i;
+      else if (mtime_lo == 32'hffff_ffff)
         mtime_hi <= mtime_hi + 1;
 
       if (wr_op && (reg_addr_i[7:2] == 6'h0)) 
