@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-VlogDef1=""
+VlogDef1="-verilog_define CoreConfig0"
 VlogDef2=""
 FileList="./read_design.tcl"
 Freq="20"

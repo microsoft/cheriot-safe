@@ -109,7 +109,7 @@ exec ln -sf $netlistDir current_netlist
 #==================================================
 # Synthesize Design
 #==================================================
-  synth_design\
+synth_design\
     -top $TOPLEVEL\
     -keep_equivalent_registers\
     -part $PART\
@@ -117,8 +117,7 @@ exec ln -sf $netlistDir current_netlist
     -verilog_define PLAT__FPGA\
     -verilog_define LOAD_FPGA_MEMORIES\
     -verilog_define SYNTHESIS\
-    -verilog_define CHERIoT\
-    $CfgVlogDef1 $CfgVlogDef2\
+    -verilog_define CHERIoT $CfgVlogDef1 $CfgVlogDef2\
     -include_dirs $STITCH_INCLUDE_LIST\
     -generic SysclkDiv1GHz=$SysclkDiv1GHz
 

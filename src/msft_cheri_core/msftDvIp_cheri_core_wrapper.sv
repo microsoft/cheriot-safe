@@ -1,6 +1,6 @@
 //import ibex_pkg::*;
 
-module msftDvIp_cheri_core_wrapper import cheri_pkg::*; #(
+module msftDvIp_cheri_core_wrapper import ibex_pkg::*; import cheri_pkg::*; #(
     parameter int unsigned DmHaltAddr      = 32'h1A11_0800,
     parameter int unsigned DmExceptionAddr = 32'h1A110808,
     parameter int unsigned HeapBase        = 32'h2004_0000,
@@ -118,6 +118,7 @@ if (UseIbex) begin : gen_cheriot_ibex
   ibex_top_tracing #(
       .DmHaltAddr       ( DmHaltAddr      ),
       .DmExceptionAddr  ( DmExceptionAddr ),
+      .RV32B            ( RV32BFull       ),
       .HeapBase         ( HeapBase        ),
       .TSMapBase        ( TSMapBase       ),
       .TSMapSize        (2048),
