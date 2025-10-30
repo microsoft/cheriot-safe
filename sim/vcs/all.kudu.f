@@ -2,6 +2,7 @@
 +define+RVFI
 +incdir+$DesignRoot/cheriot-kudu/rtl/
 +incdir+$DesignRoot/src/msft_cheri_subsystem/
+$DesignRoot/cheriot-ibex/rtl/ibex_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/cheri_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/csr_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/super_pkg.sv

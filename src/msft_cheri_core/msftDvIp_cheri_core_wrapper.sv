@@ -219,11 +219,7 @@ end else begin : gen_kudu
 
   kudu_top #(
     .CHERIoTEn      (1'b1),
-    .DualIssue      (1'b1),
-    .EarlyLoad      (1'b1),
-    .IrPipeCfg      (0),
-    .DCacheEn       (1'b0),
-    .UnalignedFetch (1'b0),
+    .PipeCfg        (1),
     .HeapBase       (HeapBase),
     .TSMapSize      (2048)
   ) kudu_top_i (
