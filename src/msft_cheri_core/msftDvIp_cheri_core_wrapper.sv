@@ -220,6 +220,7 @@ end else begin : gen_kudu
   kudu_top #(
     .CHERIoTEn      (1'b1),
     .PipeCfg        (1),
+    .DCacheEn       (1'b0),
     .HeapBase       (HeapBase),
     .TSMapSize      (2048)
   ) kudu_top_i (
