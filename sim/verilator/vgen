@@ -4,6 +4,7 @@ VlogDef1=""
 VlogDef2=""
 VlogDef3=""
 FileList="all.ibex.f"
+MainFile="swci_main.cc"
 
 # Loop over args
 for arg in "$@"; do
@@ -16,6 +17,7 @@ for arg in "$@"; do
       ;;
     -rv32)  VlogDef2="+define+ForceRV32" ;;
     -trace) VlogDef3="+define+RVFI=1" ;;
+    -stdin) MainFile="stdin_main.cc" ;;
     *)
       echo "Warning: Unknown option $arg" >&2
       ;;
@@ -28,4 +30,4 @@ echo "VlogDefs=$VlogDefs  FileList=$FileList"
 rm -rf obj_dir
 export DesignRoot=../..
 #verilator --version
-verilator -cc --timing --top-module  swci_vtb -exe ./swci_main.cc --trace $VlogDefs  -f $FileList 
+verilator -cc --timing --top-module  swci_vtb -exe ./$MainFile --trace $VlogDefs  -f $FileList
