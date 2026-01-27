@@ -19,6 +19,7 @@
 $DesignRoot/cheriot-kudu/rtl/cheri_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/csr_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/super_pkg.sv
+$DesignRoot/cheriot-ibex/rtl/ibex_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/dual_fifo.sv
 $DesignRoot/cheriot-kudu/rtl/stage_fifo.sv
 $DesignRoot/cheriot-kudu/rtl/wt_fifo.sv
