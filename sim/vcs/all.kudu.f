@@ -32,6 +32,7 @@ $DesignRoot/cheriot-kudu/rtl/mult_pipeline.sv
 $DesignRoot/cheriot-kudu/rtl/committer.sv
 $DesignRoot/cheriot-kudu/rtl/branch_unit.sv
 $DesignRoot/cheriot-kudu/rtl/branch_predict.sv
+$DesignRoot/cheriot-kudu/rtl/cmplx_unit.sv
 $DesignRoot/cheriot-kudu/rtl/ibex_counter.sv
 $DesignRoot/cheriot-kudu/rtl/ibex_csr.sv
 $DesignRoot/cheriot-kudu/rtl/cs_registers.sv

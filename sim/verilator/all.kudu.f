@@ -50,6 +50,7 @@ $DesignRoot/cheriot-kudu/rtl/branch_predict.sv
 $DesignRoot/cheriot-kudu/rtl/ibex_counter.sv
 $DesignRoot/cheriot-kudu/rtl/ibex_csr.sv
 $DesignRoot/cheriot-kudu/rtl/cs_registers.sv
+$DesignRoot/cheriot-kudu/rtl/cmplx_unit.sv
 $DesignRoot/cheriot-kudu/rtl/tracer_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/tracer.sv
 $DesignRoot/cheriot-kudu/rtl/tracer_wrapper.sv
