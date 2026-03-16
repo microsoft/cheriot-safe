@@ -496,8 +496,8 @@ begin
     if(we_ram) begin
       for(i=0;i<RAM_WIDTH;i=i+1) begin
         if(wstrb_ram[i]) begin
-          ram[addr_ram][i] = din_ram[i];
-        end 
+          ram[addr_ram][i] <= din_ram[i];
+        end
       end
     end else begin
       ram_rd_data <= ram[addr_ram];
