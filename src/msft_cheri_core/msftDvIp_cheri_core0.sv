@@ -273,8 +273,6 @@ wire [3:0]                               IROM_BE;
 // Instance msftDvIp_cheri_core_wrapper
 // ==================================================
 msftDvIp_cheri_core_wrapper #(
-  .DmHaltAddr(32'h0000_0800),
-  .DmExceptionAddr(32'h0000_0800),
   .DataWidth(DATA_WIDTH),
   .UseIbex(UseIbex)
   ) msftDvIp_cheri_core_wrapper_i (

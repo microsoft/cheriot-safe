@@ -1,11 +1,6 @@
 //import ibex_pkg::*;
 
 module msftDvIp_cheri_core_wrapper import cheri_pkg::*; #(
-    parameter int unsigned DmHaltAddr      = 32'h1A11_0800,
-    parameter int unsigned DmExceptionAddr = 32'h1A110808,
-    parameter int unsigned HeapBase        = 32'h2004_0000,
-    parameter int unsigned TSMapBase       = 32'h200f_e000, // 4kB default
-    parameter int unsigned TSMapTop        = 32'h2010_0000,
     parameter int unsigned DataWidth       = 33,
     parameter bit          UseIbex         = 1'b1
   )  (
@@ -88,6 +83,7 @@ module msftDvIp_cheri_core_wrapper import cheri_pkg::*; #(
 
   //assign ram_cfg_i = RAM_1P_CFG_DEFAULT;
   localparam int unsigned dRamBase = 32'h200f_0000;
+  localparam int unsigned TSMapBase = 32'h200f_e000;  
 
   logic [15:0] tsmap_addr_cpu;
   logic       instr_addr_b2_q, data_addr_b2_q, tsmap_addr_b2_q;
@@ -116,11 +112,11 @@ if (UseIbex) begin : gen_cheriot_ibex
   logic [31:0]          tsmap_rdata_ibex;
 
   ibex_top_tracing #(
-      .DmHaltAddr       ( DmHaltAddr      ),
-      .DmExceptionAddr  ( DmExceptionAddr ),
+      .DmHaltAddr       ( 32'h0000_0800   ),
+      .DmExceptionAddr  ( 32'h0000_0800   ),
       .RV32B            ( ibex_pkg::RV32BFull),
-      .HeapBase         ( HeapBase        ),
-      .TSMapBase        ( TSMapBase       ),
+      .HeapBase         ( 32'h2004_0000   ),
+      .TSMapBase        ( 32'h200f_e000   ),
       .TSMapSize        (2048),
       .MMRegDinW        (128),
       .MMRegDoutW       (64),
@@ -213,16 +209,45 @@ if (UseIbex) begin : gen_cheriot_ibex
   end
   
 end else begin : gen_kudu
+  import kudu_cfg_pkg::*;
+
   logic [63:0] instr_rdata_kudu;
   logic [64:0] data_rdata_kudu;
   logic [31:0] tsmap_rdata_kudu;
 
+  localparam kudu_cfg_t KuduSafeCfg = '{
+    DCacheEn       : 1'b1,
+    HeapBase       : 32'h2004_0000,
+    TSMapSize      : 1024,
+    DmHaltAddr     : 32'h0000_0800,
+    DmExcAddr      : 32'h0000_0800,
+    DbgTriggerEn   : 1'b1,
+    BrkptNum       : 2,
+    DualIssue      : 1'b1,
+    EarlyLoad      : 1'b1,
+    UnalignedFetch : 1'b0,
+    RV32M          : 1'b1,
+    RV32B          : 1'b1,
+    RV32A          : 1'b1,
+    CsrUseLSU      : 1'b1,
+    IfRdataBypass  : 1'b0,
+    IrStageBypass  : 2'b01,       
+    IfCompDecEn    : 1'b0,
+    IrCompDecEn    : 1'b1,
+    PredictUseBtb  : 1'b0,
+    PredictIbufEn  : 1'b0,
+    PredictBhtSize : 32, 
+    PredictRA      : 1'b1,
+    RALimitHi      : 21'h020080,  
+    RALimitLo      : 21'h020040,
+    PrefetchDepth  : 3,
+    IrS0Depth      : 4,
+    AltEnable      : 1'b1
+  };
+   
   kudu_top #(
     .CHERIoTEn      (1'b1),
-    .PipeCfg        (1),
-    .DCacheEn       (1'b0),
-    .HeapBase       (HeapBase),
-    .TSMapSize      (2048)
+    .CFG            (KuduSafeCfg)
   ) kudu_top_i (
     .clk_i                (clk_i       ),
     .rst_ni               (rstn_i      ),
