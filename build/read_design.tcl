@@ -6,6 +6,7 @@ set STITCH_INCLUDE_LIST [ list $DesignRoot/cheriot-ibex/rtl/ \
 
 read_verilog -sv [ glob $DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_ram_1p_pkg.sv]
 read_verilog -sv [ glob $DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_cipher_pkg.sv ]
+read_verilog -sv [ glob $DesignRoot/cheriot-kudu/rtl/kudu_cfg_pkg.sv ]
 read_verilog -sv [ glob $DesignRoot/cheriot-ibex/rtl/cheri_pkg.sv ]
 read_verilog -sv [ glob $DesignRoot/cheriot-ibex/rtl/ibex_pkg.sv ]
 read_verilog -sv [ glob $DesignRoot/cheriot-ibex/rtl/ibex_tracer_pkg.sv ]

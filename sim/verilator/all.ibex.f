@@ -16,6 +16,7 @@
 +incdir+$DesignRoot/src/msft_cheri_subsystem/
 $DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_ram_1p_pkg.sv
 $DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_cipher_pkg.sv
+$DesignRoot/cheriot-kudu/rtl/kudu_cfg_pkg.sv
 $DesignRoot/cheriot-ibex/rtl/cheri_pkg.sv
 $DesignRoot/cheriot-ibex/rtl/ibex_pkg.sv
 $DesignRoot/cheriot-ibex/rtl/ibex_tracer_pkg.sv
