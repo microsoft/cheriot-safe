@@ -10,6 +10,9 @@ on:
 
 jobs:
   run-tests:
+    strategy:
+      matrix:
+        vgen-args: [ "-stdin", "-stdin -trace", "-stdin -conf2", "-stdin -trace -conf2" ]
     # Ubuntu 24.04 is the first Ubuntu to be packaged with a working Verilator
     runs-on: ubuntu-24.04
     steps:
@@ -23,7 +26,7 @@ jobs:
       run: |
         verilator --version
         cd sim/verilator
-        ./vgen_stdin
+        ./vgen ${{ matrix.vgen-args }}
         ./vcomp
     - name: Fetch dev container
       run: docker pull ghcr.io/cheriot-platform/devcontainer:latest
