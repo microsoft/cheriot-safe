@@ -229,7 +229,6 @@ end else begin : gen_kudu
     RV32M          : 1'b1,
     RV32B          : 1'b1,
     RV32A          : 1'b1,
-    CsrUseLSU      : 1'b1,
     IfRdataBypass  : 1'b0,
     IrStageBypass  : 2'b01,       
     IfCompDecEn    : 1'b0,
@@ -242,7 +241,8 @@ end else begin : gen_kudu
     RALimitLo      : 21'h020040,
     PrefetchDepth  : 3,
     IrS0Depth      : 4,
-    AltEnable      : 1'b1
+    AltEnable      : 1'b1,
+    CJALRErrEn     : 1'b1
   };
    
   kudu_top #(
