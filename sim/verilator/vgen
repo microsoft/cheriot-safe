@@ -30,4 +30,4 @@ echo "VlogDefs=$VlogDefs  FileList=$FileList"
 rm -rf obj_dir
 export DesignRoot=../..
 #verilator --version
-verilator -cc --timing --top-module  swci_vtb -exe ./$MainFile --trace $VlogDefs  -f $FileList
+verilator -cc --timing --unroll-count 128 --top-module swci_vtb -exe ./$MainFile --trace $VlogDefs  -f $FileList
