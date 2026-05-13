@@ -11,6 +11,7 @@
 -Wno-LATCH
 -Wno-WIDTHCONCAT
 -Wno-BLKANDNBLK
+-Wno-BLKLOOPINIT
 +define+CHERIoT
 +define+XILINX_PLL_MODEL__
 +incdir+$DesignRoot/cheriot-kudu/rtl/
