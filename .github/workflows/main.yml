@@ -14,6 +14,7 @@ jobs:
       matrix:
         core: [ "ibex", "kudu"]
         trace: [ "" , "-trace" ]
+      fail-fast: false
     # Ubuntu 24.04 is the first Ubuntu to be packaged with a working Verilator
     runs-on: ubuntu-24.04
     steps:
