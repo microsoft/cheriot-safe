@@ -3,7 +3,7 @@
 #include <iostream>
 #include <termios.h>
 #include <verilated.h>
-#include <verilated_vcd_c.h>
+//#include <verilated_vcd_c.h>
 #include "Vswci_vtb.h"
 #include "Vswci_vtb___024root.h"
 
@@ -18,11 +18,11 @@ int main(int argc, char** argv, char** env) {
     Verilated::commandArgs(argc, argv);
     Vswci_vtb *dut = new Vswci_vtb;
 
-    Verilated::traceEverOn(true);
-    VerilatedVcdC *m_trace = new VerilatedVcdC;
 #ifdef VCD_TRACE
-    dut->trace(m_trace, 10);
-    m_trace->open("waveform.vcd");
+    // Verilated::traceEverOn(true);
+    // VerilatedVcdC *m_trace = new VerilatedVcdC;
+    // dut->trace(m_trace, 10);
+    // m_trace->open("waveform.vcd");
 #endif
     uint64_t sim_time = 0;
 
@@ -84,7 +84,7 @@ int main(int argc, char** argv, char** env) {
         }
 
 #ifdef VCD_TRACE
-        m_trace->dump(sim_time);
+    //    m_trace->dump(sim_time);
 #endif
         sim_time++;
         if (sim_time == 10) {
@@ -95,7 +95,7 @@ int main(int argc, char** argv, char** env) {
     }
 
 #ifdef VCD_TRACE
-    m_trace->close();
+   // m_trace->close();
 #endif
     delete dut;
 
