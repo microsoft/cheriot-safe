@@ -39,7 +39,6 @@ $DesignRoot/cheriot-kudu/rtl/ibex_csr.sv
 $DesignRoot/cheriot-kudu/rtl/cs_registers.sv
 $DesignRoot/cheriot-kudu/rtl/tracer_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/tracer.sv
-$DesignRoot/cheriot-kudu/rtl/tracer_wrapper.sv
 $DesignRoot/cheriot-kudu/rtl/kudu_top.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_obimux3.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_obimux3w0.sv

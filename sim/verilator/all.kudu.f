@@ -55,7 +55,6 @@ $DesignRoot/cheriot-kudu/rtl/cs_registers.sv
 $DesignRoot/cheriot-kudu/rtl/cmplx_unit.sv
 $DesignRoot/cheriot-kudu/rtl/tracer_pkg.sv
 $DesignRoot/cheriot-kudu/rtl/tracer.sv
-$DesignRoot/cheriot-kudu/rtl/tracer_wrapper.sv
 $DesignRoot/cheriot-kudu/rtl/kudu_top.sv
 $DesignRoot/cheriot-ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_fifo_async.sv
 $DesignRoot/src/msft_cheri_core/msftDvIp_obimux3.sv

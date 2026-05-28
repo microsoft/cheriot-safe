@@ -4,7 +4,10 @@ VlogDef1=""
 VlogDef2=""
 VlogDef3=""
 FileList="all.ibex.f"
-MainFile="swci_main.cc"
+MainFile="./swci_main.cc"
+DpiFile=""
+UseConf2=0
+UseTrace=0
 
 # Loop over args
 for arg in "$@"; do
@@ -14,15 +17,24 @@ for arg in "$@"; do
     -conf2) 
       VlogDef1="+define+CoreConfig2" 
       FileList="all.kudu.f"
+      UseConf2=1
       ;;
     -rv32)  VlogDef2="+define+ForceRV32" ;;
-    -trace) VlogDef3="+define+RVFI=1" ;;
-    -stdin) MainFile="stdin_main.cc" ;;
+    -trace) 
+     VlogDef3="+define+RVFI=1" 
+     UseTrace=1
+     ;;
+    -stdin) MainFile="./stdin_main.cc" ;;
     *)
       echo "Warning: Unknown option $arg" >&2
       ;;
   esac
 done
+
+if [[ $UseConf2 -eq 1 && $UseTrace -eq 1 ]]; then
+  DpiFile="../../cheriot-kudu/rtl/tracer_dpi.cpp"
+  VlogDef3="+define+RVFI=1 +define+TraceDPI" 
+fi
 
 VlogDefs="$VlogDef1 $VlogDef2 $VlogDef3"
 echo "VlogDefs=$VlogDefs  FileList=$FileList"
@@ -30,4 +42,5 @@ echo "VlogDefs=$VlogDefs  FileList=$FileList"
 rm -rf obj_dir
 export DesignRoot=../..
 #verilator --version
-verilator -cc --timing --unroll-count 128 --top-module swci_vtb -exe ./$MainFile --trace $VlogDefs  -f $FileList
+#verilator -cc --timing --unroll-count 128 --top-module swci_vtb -exe ./$MainFile --trace $VlogDefs  -f $FileList
+verilator -cc --timing -output-split 10000 --top-module swci_vtb -exe $MainFile $DpiFile $VlogDefs  -f $FileList
